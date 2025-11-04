@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { motion } from "motion/react";
 import {
   ChevronDown,
@@ -6,10 +6,24 @@ import {
   Users,
   Globe,
 } from "lucide-react";
+
 import SDGGrid from "./SDGGrid";
 import { Button } from "./ui/button";
 
-export default function Home() {
+interface HomeProps {
+  onNavigate?: (tab: string) => void;
+}
+
+
+export default function Home({ onNavigate }: HomeProps) {
+   const sdgSectionRef = useRef<HTMLElement>(null);
+
+  const scrollToSDGs = () => {
+    sdgSectionRef.current?.scrollIntoView({ 
+      behavior: "smooth",
+      block: "start"
+    });
+  };
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -43,12 +57,15 @@ export default function Home() {
               className="flex flex-col sm:flex-row gap-4 justify-center items-center"
             >
               <Button
+                onClick={() => onNavigate?.("contact")}
                 size="lg"
                 className="bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 text-white px-8 py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 Explore the Goals
               </Button>
+              
               <Button
+                onClick={scrollToSDGs}
                 variant="outline"
                 size="lg"
                 className="border-2 border-gray-300 hover:border-gray-400 px-8 py-4 rounded-full"
@@ -66,7 +83,8 @@ export default function Home() {
           transition={{ duration: 0.8, delay: 0.8 }}
           className="absolute bottom-16 left-0 right-0 overflow-hidden"
         >
-          <div className="bg-gradient-to-r from-yellow-500/90 to-green-500/90 backdrop-blur-sm py-3 relative">
+          <div className="bg-gradient-to-r from-yellow-500/90 to-green-500/90 backdrop-blur-sm py-3 relative"
+          data-component="SDG-Cards">
             <motion.div
               className="flex whitespace-nowrap"
               animate={{ x: [0, -1200] }}
@@ -222,7 +240,7 @@ export default function Home() {
       </section>
 
       {/* SDG Grid Section */}
-      <section className="py-20">
+      <section ref= {sdgSectionRef} className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
@@ -264,6 +282,12 @@ export default function Home() {
             </p>
             <a>
               <Button
+                 onClick={() => {
+                onNavigate?.("contact");
+                setTimeout(() => {
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }, 100);
+              }}
                 size="lg"
                 className="bg-white text-gray-900 hover:bg-gray-100 px-8 py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
               >

@@ -25,7 +25,7 @@ const contactInfo = [
   {
     icon: <Mail className="w-6 h-6" />,
     title: "Email Us",
-    content: "kennethrocete.cna@gmail.com",
+    content: "website.climateneutrals @gmail.com",
     description:
       "Send us an email and we'll respond within 24 hours",
     color: "from-blue-500 to-blue-600",

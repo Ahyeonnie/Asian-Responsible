@@ -49,6 +49,11 @@ export default function App() {
     }
   }, [isDark]);
 
+  // Scroll to top when changing tabs
+    useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [activeTab]);
+  
   // Track mouse position for fancy effects
   useEffect(() => {
     const updateMousePosition = (e: MouseEvent) => {
@@ -581,7 +586,7 @@ export default function App() {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.4 }}
             >
-              <ActiveComponent />
+              <ActiveComponent onNavigate={setActiveTab} />
             </motion.div>
           </AnimatePresence>
         </main>

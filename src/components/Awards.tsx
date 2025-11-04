@@ -11,13 +11,20 @@ import { Badge } from "./ui/badge";
 import climateNeutralAward from 'figma:asset/8d86444612d842f0a62ae183b8e3ede8a1f353dc.png';
 import climateNeutralHeroes from 'figma:asset/978e9bf39355758944f80e53089e3561bd792628.png';
 
+
+interface HomeProps {
+  onNavigate?: (tab: string) => void;
+}
+
+
+
 const awards = [
   {
     id: 1,
     title: "SDG Action Award 2024",
     organization: "UN Global Compact",
     category: "Climate Action",
-    year: "2024",
+    year: "2025",
     description:
       "Outstanding contribution to climate action initiatives and carbon neutrality goals.",
     icon: <Trophy className="w-6 h-6" />,
@@ -29,7 +36,7 @@ const awards = [
     title: "Sustainable Innovation Prize",
     organization: "World Economic Forum",
     category: "Clean Energy",
-    year: "2023",
+    year: "2025",
     description:
       "Revolutionary approach to affordable and clean energy solutions in developing countries.",
     icon: <Award className="w-6 h-6" />,
@@ -61,7 +68,8 @@ const achievementStats = [
   },
 ];
 
-export default function Awards() {
+
+export default function Awards({ onNavigate }: HomeProps) {
   return (
     <div className="min-h-screen py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -234,7 +242,7 @@ export default function Awards() {
                   <div className="flex items-center justify-center lg:justify-start gap-2">
                     <Star className="w-5 h-5 text-yellow-500" />
                     <span className="text-gray-700 font-medium">
-                      Presented by Climate Neutral Heroes Initiative
+                      Presented by Asian Responsible Enterprise Awards
                     </span>
                   </div>
                 </div>
@@ -264,7 +272,7 @@ export default function Awards() {
                     <Badge className="bg-gradient-to-r from-blue-400 to-blue-600 text-white">
                       Neutral Award
                     </Badge>
-                    <Badge variant="outline">2023</Badge>
+                    <Badge variant="outline">2025</Badge>
                   </div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-3">
                     Climate Neutral Awards
@@ -278,7 +286,7 @@ export default function Awards() {
                   <div className="flex items-center justify-center lg:justify-start gap-2">
                     <Star className="w-5 h-5 text-blue-500" />
                     <span className="text-gray-700 font-medium">
-                      Presented by Climate Neutral Certified
+                      Presented by Asian Responsible Enterprise Awards
                     </span>
                   </div>
                 </div>
@@ -391,6 +399,7 @@ export default function Awards() {
             lasting change for a sustainable future.
           </p>
           <motion.button
+            onClick={() => onNavigate?.("contact")}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="bg-white text-gray-900 px-6 sm:px-8 py-3 sm:py-4 rounded-full font-semibold hover:bg-gray-100 transition-colors duration-200 text-sm sm:text-base"

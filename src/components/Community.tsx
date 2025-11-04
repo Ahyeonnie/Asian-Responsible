@@ -45,6 +45,11 @@ const communityStats = [
   },
 ];
 
+interface HomeProps {
+  onNavigate?: (tab: string) => void;
+}
+
+
 const featuredProjects = [
   {
     id: 1,
@@ -185,7 +190,7 @@ const testimonials = [
   },
 ];
 
-export default function Community() {
+export default function Community( {onNavigate}: Homeprops) {
   return (
     <div className="min-h-screen py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -252,7 +257,8 @@ export default function Community() {
               <p className="text-lg mb-6 opacity-90">
                 Be part of a community that's changing the world
               </p>
-              <Button className="bg-white text-gray-900 hover:bg-gray-100 px-8 py-3 rounded-full">
+              <Button className="bg-white text-gray-900 hover:bg-gray-100 px-8 py-3 rounded-full"
+                onClick={() => onNavigate?.("contact")}>
                 Join Community
               </Button>
             </div>
@@ -634,13 +640,9 @@ export default function Community() {
             journey towards sustainable impact.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            
             <Button
-              variant="outline"
-              className="bg-white text-gray-900 hover:bg-gray-100 px-8 py-3 rounded-full"
-            >
-              Join Community
-            </Button>
-            <Button
+             onClick={() => onNavigate?.("contact")}
               variant="outline"
               className="bg-white text-gray-900 hover:bg-gray-100 px-8 py-3 rounded-full"
             >
