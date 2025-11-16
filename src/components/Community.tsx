@@ -190,7 +190,7 @@ const testimonials = [
   },
 ];
 
-export default function Community( {onNavigate}: Homeprops) {
+export default function Community( {onNavigate}: HomeProps) {
   return (
     <div className="min-h-screen py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -423,7 +423,7 @@ export default function Community( {onNavigate}: Homeprops) {
           </motion.div>
         </motion.div>
 
-        {/* Featured Projects */}
+        {/* Featured Projects 
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
@@ -512,9 +512,9 @@ export default function Community( {onNavigate}: Homeprops) {
               </motion.div>
             ))}
           </div>
-        </motion.div>
+        </motion.div> */}
 
-        {/* Upcoming Events */}
+        {/* Upcoming Events 
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
@@ -574,9 +574,9 @@ export default function Community( {onNavigate}: Homeprops) {
               </motion.div>
             ))}
           </div>
-        </motion.div>
+        </motion.div>*/}
 
-        {/* Testimonials */}
+        {/* Testimonials 
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
@@ -623,7 +623,7 @@ export default function Community( {onNavigate}: Homeprops) {
               </motion.div>
             ))}
           </div>
-        </motion.div>
+        </motion.div> */}
 
         {/* Join CTA */}
         <motion.div

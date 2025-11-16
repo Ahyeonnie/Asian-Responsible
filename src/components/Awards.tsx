@@ -21,29 +21,30 @@ interface HomeProps {
 const awards = [
   {
     id: 1,
-    title: "SDG Action Award 2024",
-    organization: "UN Global Compact",
+    title: "Name of Publication",
+    organizationImage: "Book Image",
     category: "Climate Action",
     year: "2025",
     description:
       "Outstanding contribution to climate action initiatives and carbon neutrality goals.",
     icon: <Trophy className="w-6 h-6" />,
     color: "from-yellow-400 to-yellow-600",
-    sdg: 13,
+    sdg: "Month",
   },
   {
     id: 2,
-    title: "Sustainable Innovation Prize",
-    organization: "World Economic Forum",
+    title: "Name of Publication",
+    organization: "Book Image",
     category: "Clean Energy",
     year: "2025",
     description:
       "Revolutionary approach to affordable and clean energy solutions in developing countries.",
     icon: <Award className="w-6 h-6" />,
     color: "from-blue-400 to-blue-600",
-    sdg: 7,
+    sdg: "Month",
   },
 ];
+
 
 const achievementStats = [
   {
@@ -321,6 +322,9 @@ export default function Awards({ onNavigate }: HomeProps) {
           ))}
         </motion.div>
 
+        <h2 className="text-3xl font-bold text-center mb-12 bg-gradient-to-r from-yellow-500 to-blue-600 bg-clip-text text-transparent">
+            Publications
+          </h2>
         {/* Awards Grid */}
         <motion.div
           initial={{ opacity: 0, y: 50 }}
@@ -350,7 +354,7 @@ export default function Awards({ onNavigate }: HomeProps) {
                         variant="outline"
                         className="text-black"
                       >
-                        SDG {award.sdg}
+                        {award.sdg}
                       </Badge>
                       <Badge
                         variant="outline"
@@ -363,9 +367,17 @@ export default function Awards({ onNavigate }: HomeProps) {
                   <CardTitle className="text-xl group-hover:text-blue-600 transition-colors duration-200 dark:text-black mb-8">
                     {award.title}
                   </CardTitle>
-                  <p className="text-sm text-gray-500 font-medium">
-                    {award.organization}
-                  </p>
+                  <div className="flex items-center justify-center w-full">
+                    <div className="w-full lg:w-64 h-48 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl border-2 border-blue-300 flex items-center justify-center group hover:from-blue-200 hover:to-blue-300 transition-all duration-300 overflow-hidden">
+                      <motion.img 
+                        src={award.organizationImage} 
+                        alt={award.title}
+                        className="w-full h-full object-contain p-2 rounded-lg"
+                        whileHover={{ scale: 1.05 }}
+                        transition={{ duration: 0.3 }}
+                      />
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="mb-4">

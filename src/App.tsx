@@ -27,6 +27,7 @@ const navItems = [
   { id: "contact", label: "Contact Us", component: Contact },
 ];
 
+
 export default function App() {
   const [activeTab, setActiveTab] = useState("home");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -326,11 +327,27 @@ export default function App() {
   
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
             <div className="flex justify-between items-center h-20">
-              {/* Enhanced Logo */}
+              
               <motion.div
                 whileHover={{ scale: 1.05, rotate: 1 }}
                 whileTap={{ scale: 0.95 }}
                 className="flex items-center space-x-4 cursor-pointer"
+                onClick={() => {
+                  setActiveTab("home");
+                  setMobileMenuOpen(false);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  const key = (e as React.KeyboardEvent).key;
+                  if (key === "Enter" || key === " ") {
+                    setActiveTab("home");
+                    setMobileMenuOpen(false);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }
+                }}
+                aria-label="Go to Home"
               >
                 <motion.div
                   className="relative overflow-hidden"
