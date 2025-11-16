@@ -356,46 +356,13 @@ export default function SDGGrid() {
             <div className="relative p-4 sm:p-5 md:p-6 text-white min-h-[280px] sm:min-h-[320px] md:min-h-[340px] lg:min-h-[320px] xl:min-h-[360px] flex flex-col justify-between bg-[rgba(255,255,255,0)]">
               <div className="flex items-center justify-between mb-4">
                 <motion.div 
-                  className={`relative w-16 h-16 flex items-center justify-center rounded-2xl shadow-2xl`}
-                  whileHover={{ scale: 1.15, rotate: 10 }}
-                  transition={{ duration: 0.3, type: "spring" }}
-                  style={{
-                    background: `linear-gradient(135deg, ${sdg.iconColor}dd, ${sdg.iconColor})`
-                  }}
+                  className="w-16 h-16 flex items-center justify-center"
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  transition={{ duration: 0.3 }}
                 >
-                  {/* Inner glow */}
-                  <div 
-                    className="absolute inset-0 rounded-2xl opacity-50 blur-sm"
-                    style={{
-                      background: `linear-gradient(135deg, ${sdg.iconColor}, transparent)`
-                    }}
-                  />
-                  
-                  {/* Icon shadow layer */}
-                  <div className="absolute inset-0 rounded-2xl" style={{
-                    boxShadow: `
-                      inset 0 -2px 8px rgba(0,0,0,0.3),
-                      inset 0 2px 8px rgba(255,255,255,0.2),
-                      0 8px 24px ${sdg.iconColor}60,
-                      0 4px 12px ${sdg.iconColor}40
-                    `
-                  }} />
-                  
                   <sdg.icon 
-                    className="w-8 h-8 relative z-10 drop-shadow-lg" 
-                    strokeWidth={2.5}
-                    style={{ 
-                      color: '#ffffff',
-                      filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
-                    }}
-                  />
-                  
-                  {/* Glossy overlay effect */}
-                  <div 
-                    className="absolute inset-0 rounded-2xl opacity-40"
-                    style={{
-                      background: 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%, rgba(0,0,0,0.1) 100%)'
-                    }}
+                    className="w-10 h-10 text-white drop-shadow-lg" 
+                    strokeWidth={2}
                   />
                 </motion.div>
                 <motion.span 
