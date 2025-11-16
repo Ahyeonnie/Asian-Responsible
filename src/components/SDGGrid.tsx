@@ -3,7 +3,25 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Badge } from './ui/badge';
 import { ScrollArea } from './ui/scroll-area';
-import { X } from 'lucide-react';
+import { 
+  X, 
+  Users, 
+  Wheat, 
+  HeartPulse, 
+  GraduationCap, 
+  Scale, 
+  Droplets, 
+  Zap, 
+  Briefcase, 
+  Factory, 
+  UsersRound, 
+  Building2, 
+  Recycle, 
+  Globe, 
+  Fish, 
+  TreePine, 
+  Handshake 
+} from 'lucide-react';
 import noPovertySDG from 'figma:asset/cf850a383750826c56fb347fa95ed36d9809b522.png';
 import zeroHungerSDG from 'figma:asset/659efdd8e88a77a509061daeeca82c960ae7a07f.png';
 import goodHealthSDG from 'figma:asset/224c16d4ab2fcceb5121542341ac2124296fa640.png';
@@ -28,7 +46,10 @@ const sdgData = [
     title: 'No Poverty', 
     color: '#fbbf24', 
     gradient: 'from-yellow-400 to-yellow-600', 
-    icon: '👥',
+    icon: Users,
+    iconColor: '#FFD700',
+    iconBg: 'bg-amber-900/30',
+    iconImage: 'https://images.unsplash.com/photo-1603100915384-f5eb8c1bab7f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwb3ZlcnR5JTIwaGVscGluZyUyMGhhbmRzfGVufDF8fHx8MTc2MjM0OTM0N3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     description: 'End poverty in all its forms everywhere',
     longDescription: 'Eradicating poverty in all its forms remains one of the greatest challenges facing humanity. While the number of people living in extreme poverty dropped by more than half between 1990 and 2015, too many are still struggling for the most basic human needs.',
     targets: ['By 2030, eradicate extreme poverty for all people everywhere', 'Reduce at least by half the proportion of men, women and children of all ages living in poverty'],
@@ -40,7 +61,10 @@ const sdgData = [
     title: 'Zero Hunger', 
     color: '#fde047', 
     gradient: 'from-yellow-300 to-yellow-500', 
-    icon: '🌾',
+    icon: Wheat,
+    iconColor: '#D4AF37',
+    iconBg: 'bg-yellow-900/30',
+    iconImage: 'https://images.unsplash.com/photo-1595360584848-6404da6fe097?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3aGVhdCUyMGdyYWluJTIwaGFydmVzdHxlbnwxfHx8fDE3NjIzODc2ODd8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     description: 'End hunger, achieve food security and improved nutrition',
     longDescription: 'The number of undernourished people has dropped by almost half in the past two decades because of rapid economic growth and increased agricultural productivity.',
     targets: ['End hunger and ensure access by all people to safe, nutritious food', 'End all forms of malnutrition'],
@@ -52,7 +76,10 @@ const sdgData = [
     title: 'Good Health and Well-being', 
     color: '#10b981', 
     gradient: 'from-green-400 to-green-600', 
-    icon: '❤️',
+    icon: HeartPulse,
+    iconColor: '#EF4444',
+    iconBg: 'bg-red-100/40',
+    iconImage: 'https://images.unsplash.com/photo-1665315469403-fde8e923f719?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZWRpY2FsJTIwaGVhbHRoJTIwc3RldGhvc2NvcGV8ZW58MXx8fHwxNzYyMzc3NzQ0fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     description: 'Ensure healthy lives and promote well-being for all',
     longDescription: 'Significant strides have been made in increasing life expectancy and reducing some of the common killers associated with child and maternal mortality.',
     targets: ['Reduce global maternal mortality ratio', 'End preventable deaths of newborns and children'],
@@ -64,7 +91,10 @@ const sdgData = [
     title: 'Quality Education', 
     color: '#3b82f6', 
     gradient: 'from-blue-400 to-blue-600', 
-    icon: '📚',
+    icon: GraduationCap,
+    iconColor: '#1E3A8A',
+    iconBg: 'bg-blue-100/40',
+    iconImage: 'https://images.unsplash.com/photo-1595315342809-fa10945ed07c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdHVkZW50JTIwZWR1Y2F0aW9uJTIwYm9va3N8ZW58MXx8fHwxNzYyNDEzNTA3fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     description: 'Ensure inclusive and equitable quality education',
     longDescription: 'Education liberates the intellect, unlocks the imagination and is fundamental for respect of human rights.',
     targets: ['Ensure all girls and boys complete free primary and secondary schooling', 'Ensure equal access to affordable vocational training'],
@@ -76,7 +106,10 @@ const sdgData = [
     title: 'Gender Equality', 
     color: '#06b6d4', 
     gradient: 'from-cyan-400 to-cyan-600', 
-    icon: '⚖️',
+    icon: Scale,
+    iconColor: '#DB2777',
+    iconBg: 'bg-pink-100/40',
+    iconImage: 'https://images.unsplash.com/photo-1758368164419-5a1c5e839dd4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxnZW5kZXIlMjBlcXVhbGl0eSUyMHN5bWJvbHxlbnwxfHx8fDE3NjI0MTM1MDh8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     description: 'Achieve gender equality and empower all women and girls',
     longDescription: 'Gender equality is not only a fundamental human right, but a necessary foundation for a peaceful, prosperous and sustainable world.',
     targets: ['End all forms of discrimination against women and girls', 'Eliminate all forms of violence against women and girls'],
@@ -88,7 +121,10 @@ const sdgData = [
     title: 'Clean Water and Sanitation', 
     color: '#06b6d4', 
     gradient: 'from-cyan-400 to-blue-500', 
-    icon: '💧',
+    icon: Droplets,
+    iconColor: '#0EA5E9',
+    iconBg: 'bg-cyan-100/40',
+    iconImage: 'https://images.unsplash.com/photo-1606214554354-06acd2c0480f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx3YXRlciUyMGRyb3BsZXQlMjBjbGVhbnxlbnwxfHx8fDE3NjI0MTM1MDh8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     description: 'Ensure availability and sustainable management of water',
     longDescription: 'Clean, accessible water for all is an essential part of the world we want to live in.',
     targets: ['Achieve universal and equitable access to safe drinking water', 'Achieve access to adequate sanitation and hygiene for all'],
@@ -100,7 +136,10 @@ const sdgData = [
     title: 'Affordable and Clean Energy', 
     color: '#fbbf24', 
     gradient: 'from-yellow-400 to-amber-500', 
-    icon: '⚡',
+    icon: Zap,
+    iconColor: '#FBBF24',
+    iconBg: 'bg-yellow-100/40',
+    iconImage: 'https://images.unsplash.com/photo-1655300256620-680cb0f1cec3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzb2xhciUyMHBhbmVsJTIwZW5lcmd5fGVufDF8fHx8MTc2MjQxMzUwOHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     description: 'Ensure access to affordable, reliable, sustainable energy',
     longDescription: 'Energy is central to nearly every major challenge and opportunity the world faces today.',
     targets: ['Ensure universal access to affordable electricity', 'Increase substantially the share of renewable energy'],
@@ -112,7 +151,10 @@ const sdgData = [
     title: 'Decent Work and Economic Growth', 
     color: '#059669', 
     gradient: 'from-green-500 to-green-700', 
-    icon: '💼',
+    icon: Briefcase,
+    iconColor: '#7C2D12',
+    iconBg: 'bg-orange-100/40',
+    iconImage: 'https://images.unsplash.com/photo-1583525957908-ac79cf6319a3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxidXNpbmVzcyUyMGJyaWVmY2FzZSUyMHdvcmt8ZW58MXx8fHwxNzYyMzUxNDIxfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     description: 'Promote sustained, inclusive economic growth',
     longDescription: 'Roughly half the world\'s population still lives on the equivalent of about US$2 a day.',
     targets: ['Sustain per capita economic growth', 'Achieve full and productive employment for all'],
@@ -124,7 +166,10 @@ const sdgData = [
     title: 'Industry, Innovation and Infrastructure', 
     color: '#3b82f6', 
     gradient: 'from-blue-500 to-indigo-600', 
-    icon: '🏗️',
+    icon: Factory,
+    iconColor: '#F97316',
+    iconBg: 'bg-orange-100/40',
+    iconImage: 'https://images.unsplash.com/photo-1758304481074-19eacd3e385d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmYWN0b3J5JTIwaW5kdXN0cnklMjBpbmZyYXN0cnVjdHVyZXxlbnwxfHx8fDE3NjI0MTM1MDl8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     description: 'Build resilient infrastructure, promote innovation',
     longDescription: 'Investment in infrastructure and innovation are crucial drivers of economic growth and development.',
     targets: ['Develop quality, reliable infrastructure', 'Promote inclusive and sustainable industrialization'],
@@ -136,7 +181,10 @@ const sdgData = [
     title: 'Reduced Inequality', 
     color: '#10b981', 
     gradient: 'from-green-400 to-emerald-600', 
-    icon: '🤝',
+    icon: UsersRound,
+    iconColor: '#EC4899',
+    iconBg: 'bg-pink-100/40',
+    iconImage: 'https://images.unsplash.com/photo-1761957374132-a5137e99f26c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkaXZlcnNlJTIwcGVvcGxlJTIwY29tbXVuaXR5fGVufDF8fHx8MTc2MjM2NTI2N3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     description: 'Reduce inequality within and among countries',
     longDescription: 'Income inequality has increased in nearly everywhere in recent decades, but at different speeds.',
     targets: ['Progressively achieve and sustain income growth', 'Empower and promote social and economic inclusion'],
@@ -148,7 +196,10 @@ const sdgData = [
     title: 'Sustainable Cities and Communities', 
     color: '#fbbf24', 
     gradient: 'from-amber-400 to-orange-500', 
-    icon: '🏙️',
+    icon: Building2,
+    iconColor: '#F59E0B',
+    iconBg: 'bg-amber-100/40',
+    iconImage: 'https://images.unsplash.com/photo-1629652320041-c2c555e68101?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjaXR5JTIwc2t5bGluZSUyMGJ1aWxkaW5nc3xlbnwxfHx8fDE3NjI0MTM1MTB8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     description: 'Make cities and human settlements inclusive and sustainable',
     longDescription: 'More than half of us live in cities. By 2050, two-thirds of all humanity will call cities home.',
     targets: ['Ensure access to adequate, safe housing', 'Provide access to safe transport systems'],
@@ -160,7 +211,10 @@ const sdgData = [
     title: 'Responsible Consumption and Production', 
     color: '#059669', 
     gradient: 'from-emerald-500 to-green-700', 
-    icon: '♻️',
+    icon: Recycle,
+    iconColor: '#10B981',
+    iconBg: 'bg-green-100/40',
+    iconImage: 'https://images.unsplash.com/photo-1605050714296-ef81755470ca?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyZWN5Y2xpbmclMjBzdXN0YWluYWJpbGl0eSUyMGVudmlyb25tZW50fGVufDF8fHx8MTc2MjQxMzUxMHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     description: 'Ensure sustainable consumption and production patterns',
     longDescription: 'Worldwide consumption and production drive the global economy but rely on the use of the natural environment.',
     targets: ['Implement sustainable management of natural resources', 'Reduce waste generation through prevention and recycling'],
@@ -172,7 +226,10 @@ const sdgData = [
     title: 'Climate Action', 
     color: '#059669', 
     gradient: 'from-green-600 to-green-800', 
-    icon: '🌍',
+    icon: Globe,
+    iconColor: '#3B82F6',
+    iconBg: 'bg-blue-100/40',
+    iconImage: 'https://images.unsplash.com/photo-1742412615753-187a80f4e30c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxlYXJ0aCUyMGNsaW1hdGUlMjBwbGFuZXR8ZW58MXx8fHwxNzYyNDEzNTExfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     description: 'Take urgent action to combat climate change',
     longDescription: 'Climate change is now affecting every country on every continent.',
     targets: ['Strengthen resilience to climate-related hazards', 'Integrate climate change measures into policies'],
@@ -184,7 +241,10 @@ const sdgData = [
     title: 'Life Below Water', 
     color: '#06b6d4', 
     gradient: 'from-cyan-500 to-blue-600', 
-    icon: '🐠',
+    icon: Fish,
+    iconColor: '#0284C7',
+    iconBg: 'bg-sky-100/40',
+    iconImage: 'https://images.unsplash.com/photo-1668663516335-cc480a98766a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxvY2VhbiUyMHdhdGVyJTIwZmlzaHxlbnwxfHx8fDE3NjI0MTM1MTF8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     description: 'Conserve and sustainably use the oceans and seas',
     longDescription: 'The world\'s oceans drive global systems that make the Earth habitable for humankind.',
     targets: ['Prevent and reduce marine pollution', 'Sustainably manage and protect marine ecosystems'],
@@ -196,7 +256,10 @@ const sdgData = [
     title: 'Life on Land', 
     color: '#10b981', 
     gradient: 'from-green-500 to-green-700', 
-    icon: '🌳',
+    icon: TreePine,
+    iconColor: '#059669',
+    iconBg: 'bg-emerald-100/40',
+    iconImage: 'https://images.unsplash.com/photo-1614022837662-e74b0b53dcf3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmb3Jlc3QlMjB0cmVlcyUyMG5hdHVyZXxlbnwxfHx8fDE3NjIzMzM3NDl8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     description: 'Protect, restore and promote sustainable use of ecosystems',
     longDescription: 'Nature is critical to our survival and provides our air, water and nourishment.',
     targets: ['Ensure conservation of mountain ecosystems', 'Combat desertification and restore degraded land'],
@@ -208,7 +271,10 @@ const sdgData = [
     title: 'Peace and Justice Strong Institutions', 
     color: '#3b82f6', 
     gradient: 'from-blue-600 to-indigo-700', 
-    icon: '⚖️',
+    icon: Scale,
+    iconColor: '#1E40AF',
+    iconBg: 'bg-indigo-100/40',
+    iconImage: 'https://images.unsplash.com/photo-1687289133469-b2a07a13b78b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxqdXN0aWNlJTIwc2NhbGVzJTIwbGF3fGVufDF8fHx8MTc2MjM2MDE2OHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     description: 'Promote peaceful and inclusive societies',
     longDescription: 'Access to justice for all, and building effective, accountable institutions at all levels.',
     targets: ['Reduce all forms of violence', 'Develop effective, accountable institutions'],
@@ -220,7 +286,10 @@ const sdgData = [
     title: 'Partnerships to achieve the Goal', 
     color: '#fbbf24', 
     gradient: 'from-yellow-500 to-amber-600', 
-    icon: '🤝',
+    icon: Handshake,
+    iconColor: '#0369A1',
+    iconBg: 'bg-sky-100/40',
+    iconImage: 'https://images.unsplash.com/photo-1745847768380-2caeadbb3b71?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxoYW5kc2hha2UlMjBwYXJ0bmVyc2hpcCUyMGJ1c2luZXNzfGVufDF8fHx8MTc2MjM1MDQ0M3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
     description: 'Strengthen global partnerships for sustainable development',
     longDescription: 'Successful sustainable development agenda requires partnerships between governments, private sector and civil society.',
     targets: ['Strengthen domestic resource mobilization', 'Enhance global partnership for sustainable development'],
@@ -286,13 +355,39 @@ export default function SDGGrid() {
             
             <div className="relative p-4 sm:p-5 md:p-6 text-white min-h-[280px] sm:min-h-[320px] md:min-h-[340px] lg:min-h-[320px] xl:min-h-[360px] flex flex-col justify-between bg-[rgba(255,255,255,0)]">
               <div className="flex items-center justify-between mb-4">
-                <motion.span 
-                  className="text-4xl"
-                  whileHover={{ scale: 1.2, rotate: 10 }}
-                  transition={{ duration: 0.2 }}
+                <motion.div 
+                  className="relative w-16 h-16 overflow-hidden rounded-2xl shadow-2xl"
+                  whileHover={{ scale: 1.15, rotate: 5 }}
+                  transition={{ duration: 0.3, type: "spring" }}
                 >
-                  {sdg.icon}
-                </motion.span>
+                  {/* Realistic photo as background */}
+                  <img 
+                    src={sdg.iconImage} 
+                    alt={sdg.title}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                  
+                  {/* Dark overlay for better contrast */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-black/20 via-black/10 to-black/30" />
+                  
+                  {/* Icon shadow layer for depth */}
+                  <div className="absolute inset-0 rounded-2xl" style={{
+                    boxShadow: `
+                      inset 0 -2px 8px rgba(0,0,0,0.4),
+                      inset 0 2px 8px rgba(255,255,255,0.1),
+                      0 8px 24px ${sdg.iconColor}60,
+                      0 4px 12px ${sdg.iconColor}40
+                    `
+                  }} />
+                  
+                  {/* Glossy overlay effect */}
+                  <div 
+                    className="absolute inset-0 rounded-2xl opacity-30"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 50%, rgba(0,0,0,0.2) 100%)'
+                    }}
+                  />
+                </motion.div>
                 <motion.span 
                   className="text-sm font-semibold bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/30"
                   whileHover={{ scale: 1.05 }}
@@ -399,14 +494,40 @@ export default function SDGGrid() {
                 <div className="absolute bottom-0 left-0 w-24 h-24 rounded-full bg-white/10 translate-y-12 -translate-x-12"></div>
                 
                 <div className="relative flex items-center justify-between mb-4">
-                  <motion.span 
-                    className="text-6xl"
+                  <motion.div 
+                    className="relative w-24 h-24 overflow-hidden rounded-3xl shadow-2xl"
                     initial={{ rotate: -15, scale: 0.8 }}
                     animate={{ rotate: 0, scale: 1 }}
                     transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
                   >
-                    {selectedSDG.icon}
-                  </motion.span>
+                    {/* Realistic photo as background */}
+                    <img 
+                      src={selectedSDG.iconImage} 
+                      alt={selectedSDG.title}
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                    
+                    {/* Dark overlay for better contrast */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-black/20 via-black/10 to-black/30" />
+                    
+                    {/* Icon shadow layer for depth */}
+                    <div className="absolute inset-0 rounded-3xl" style={{
+                      boxShadow: `
+                        inset 0 -3px 12px rgba(0,0,0,0.4),
+                        inset 0 3px 12px rgba(255,255,255,0.1),
+                        0 12px 32px ${selectedSDG.iconColor}70,
+                        0 6px 16px ${selectedSDG.iconColor}50
+                      `
+                    }} />
+                    
+                    {/* Glossy overlay effect */}
+                    <div 
+                      className="absolute inset-0 rounded-3xl opacity-40"
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%, rgba(0,0,0,0.2) 100%)'
+                      }}
+                    />
+                  </motion.div>
                   <Badge variant="secondary" className="bg-white/20 text-white border-white/30 text-lg px-4 py-2">
                     SDG {selectedSDG.id}
                   </Badge>
