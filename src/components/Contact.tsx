@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import emailjs from "emailjs-com";
+import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import {
   Mail,
@@ -22,11 +21,19 @@ import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Badge } from "./ui/badge";
 
-const contactInfo = [
+interface ContactInfo {
+  icon: JSX.Element;
+  title: string;
+  content: string;
+  description: string;
+  color: string;
+}
+
+const defaultContactInfo: ContactInfo[] = [
   {
     icon: <Mail className="w-6 h-6" />,
     title: "Email Us",
-    content: "website.climateneutrals @gmail.com",
+    content: "kennethrocete.cna@gmail.com",
     description:
       "Send us an email and we'll respond within 24 hours",
     color: "from-blue-500 to-blue-600",
@@ -99,6 +106,32 @@ const officeLocations = [
 ];
 
 export default function Contact() {
+  // Load contact data from localStorage
+  const [contactInfo, setContactInfo] = useState(defaultContactInfo);
+  const [offices, setOffices] = useState(officeLocations);
+  
+  useEffect(() => {
+    const saved = localStorage.getItem('contactData');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.contactInfo && Array.isArray(parsed.contactInfo)) {
+          // Restore icon JSX elements
+          const contactInfoWithIcons = parsed.contactInfo.map((info: any, index: number) => ({
+            ...info,
+            icon: defaultContactInfo[index]?.icon || <Mail className="w-6 h-6" />
+          }));
+          setContactInfo(contactInfoWithIcons);
+        }
+        if (parsed.offices && Array.isArray(parsed.offices)) {
+          setOffices(parsed.offices);
+        }
+      } catch (error) {
+        console.error('Error loading contact data:', error);
+      }
+    }
+  }, []);
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -106,49 +139,34 @@ export default function Contact() {
 
     subject: "",
     message: "",
-    
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      setIsSubmitting(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
 
-      
-   try {
-    await emailjs.send(
-      import.meta.env.VITE_EMAILJS_SERVICE_ID,   
-      import.meta.env.VITE_EMAILJS_TEMPLATE_ID,  
-      {
-        name: formData.name,
-        email: formData.email,
-        organization: formData.organization,
-        subject: formData.subject,
-        message: formData.message,
-      },
-      import.meta.env.VITE_EMAILJS_PUBLIC_KEY    
-    );
+    // Simulate form submission
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      setIsSubmitted(true);
-  } catch (error) {
-    console.error("Email failed:", error);
-  }
+    setIsSubmitting(false);
+    setIsSubmitted(true);
 
-      // Reset form after 3 seconds
-      setTimeout(() => {
-        setIsSubmitted(false);
-        setFormData({
-          name: "",
-          email: "",
-          organization: "",
+    // Reset form after 3 seconds
+    setTimeout(() => {
+      setIsSubmitted(false);
+      setFormData({
+        name: "",
+        email: "",
+        organization: "",
 
-          subject: "",
-          message: "",
-        });
-      }, 3000);
-    };
+        subject: "",
+        message: "",
+      });
+    }, 3000);
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -416,7 +434,7 @@ export default function Contact() {
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 1 }}
-          className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-lg"
+          className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-lg mb-16"
         >
           <h2 className="text-2xl font-bold text-center text-gray-900 mb-8">
             Frequently Asked Questions
@@ -460,6 +478,152 @@ export default function Contact() {
                 any of our global office locations.
               </p>
             </div>
+          </div>
+        </motion.div>
+
+        {/* Google Map Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 1.2 }}
+          className="bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden border border-white/20 shadow-lg"
+        >
+          <div className="p-8 bg-gradient-to-r from-blue-500 to-green-500">
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <MapPin className="w-8 h-8 text-white" />
+              <h2 className="text-3xl font-bold text-white">
+                Our Location
+              </h2>
+            </div>
+            <p className="text-center text-white/90 text-lg">
+              Visit us at our headquarters in Makati City
+            </p>
+          </div>
+
+          <div className="p-6 bg-white">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+              {/* Address Info */}
+              <div className="lg:col-span-1 space-y-4">
+                <div className="bg-gradient-to-br from-blue-50 to-green-50 rounded-xl p-6">
+                  <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-blue-600" />
+                    Address
+                  </h3>
+                  <p className="text-gray-700 leading-relaxed">
+                    6789 Ayala Avenue
+                    <br />
+                    Salcedo Village, Brgy. Bel Air
+                    <br />
+                    Makati City, Metro Manila
+                    <br />
+                    Philippines
+                  </p>
+                </div>
+
+                <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-xl p-6">
+                  <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-green-600" />
+                    Business Hours
+                  </h3>
+                  <div className="space-y-2 text-sm text-gray-700">
+                    <div className="flex justify-between">
+                      <span>Monday - Friday:</span>
+                      <span className="font-semibold">
+                        9:00 AM - 6:00 PM
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Saturday:</span>
+                      <span className="font-semibold">
+                        10:00 AM - 2:00 PM
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Sunday:</span>
+                      <span className="font-semibold">
+                        Closed
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-6">
+                  <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Globe className="w-5 h-5 text-orange-600" />
+                    Get Directions
+                  </h3>
+                  <a
+                    href="https://www.google.com/maps/search/?api=1&query=6789+Ayala+Avenue+Salcedo+Village+Makati+City+Metro+Manila"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold transition-colors"
+                  >
+                    Open in Google Maps
+                    <Send className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+
+              {/* Map */}
+              <div className="lg:col-span-2">
+                <div className="rounded-xl overflow-hidden shadow-xl border-4 border-gray-100 h-full min-h-[500px]">
+                  <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3861.5285364847705!2d121.02441731484473!3d14.556729589830156!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397c90264a0dbed%3A0xd03567f4dd7bfe6b!2sAyala%20Avenue%2C%20Makati%2C%20Metro%20Manila!5e0!3m2!1sen!2sph!4v1234567890123!5m2!1sen!2sph"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0, minHeight: "500px" }}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title="Asian Responsible Enterprise, OPC Location"
+                  ></iframe>
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Info */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1.4 }}
+              className="bg-gradient-to-r from-blue-50 via-green-50 to-yellow-50 rounded-xl p-6"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                <div>
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <MapPin className="w-6 h-6 text-white" />
+                  </div>
+                  <h4 className="font-bold text-gray-900 mb-1">
+                    Prime Location
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    Heart of Makati's business district
+                  </p>
+                </div>
+                <div>
+                  <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Users className="w-6 h-6 text-white" />
+                  </div>
+                  <h4 className="font-bold text-gray-900 mb-1">
+                    Visit By Appointment
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    Schedule your meeting in advance
+                  </p>
+                </div>
+                <div>
+                  <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Phone className="w-6 h-6 text-white" />
+                  </div>
+                  <h4 className="font-bold text-gray-900 mb-1">
+                    Call Ahead
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    (+63) 968-858-1982
+                  </p>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </motion.div>
       </div>

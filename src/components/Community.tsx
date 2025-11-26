@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import {
   Users,
@@ -22,33 +22,28 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
 
-const communityStats = [
+const defaultCommunityStats = [
   {
     label: "Active Members",
-    value: "30",
+    value: "150K+",
     icon: <Users className="w-6 h-6" />,
   },
   {
     label: "Projects Launched",
-    value: "N/A",
+    value: "2,500+",
     icon: <Star className="w-6 h-6" />,
   },
   {
     label: "Countries Reached",
-    value: "N/A",
+    value: "85",
     icon: <MapPin className="w-6 h-6" />,
   },
   {
     label: "Impact Stories",
-    value: "10",
+    value: "10K+",
     icon: <Heart className="w-6 h-6" />,
   },
 ];
-
-interface HomeProps {
-  onNavigate?: (tab: string) => void;
-}
-
 
 const featuredProjects = [
   {
@@ -190,7 +185,37 @@ const testimonials = [
   },
 ];
 
-export default function Community( {onNavigate}: HomeProps) {
+export default function Community() {
+  // Load community data from localStorage
+  const [communityStats, setCommunityStats] = useState(defaultCommunityStats);
+  const [projects, setProjects] = useState(featuredProjects);
+  const [events, setEvents] = useState(upcomingEvents);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('communityData');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.stats && Array.isArray(parsed.stats)) {
+          // Restore icon JSX elements
+          const statsWithIcons = parsed.stats.map((stat: any, index: number) => ({
+            ...stat,
+            icon: defaultCommunityStats[index]?.icon || <Users className="w-6 h-6" />
+          }));
+          setCommunityStats(statsWithIcons);
+        }
+        if (parsed.projects && Array.isArray(parsed.projects)) {
+          setProjects(parsed.projects);
+        }
+        if (parsed.events && Array.isArray(parsed.events)) {
+          setEvents(parsed.events);
+        }
+      } catch (error) {
+        console.error('Error loading community data:', error);
+      }
+    }
+  }, []);
+
   return (
     <div className="min-h-screen py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -257,8 +282,7 @@ export default function Community( {onNavigate}: HomeProps) {
               <p className="text-lg mb-6 opacity-90">
                 Be part of a community that's changing the world
               </p>
-              <Button className="bg-white text-gray-900 hover:bg-gray-100 px-8 py-3 rounded-full"
-                onClick={() => onNavigate?.("contact")}>
+              <Button className="bg-white text-gray-900 hover:bg-gray-100 px-8 py-3 rounded-full">
                 Join Community
               </Button>
             </div>
@@ -423,7 +447,7 @@ export default function Community( {onNavigate}: HomeProps) {
           </motion.div>
         </motion.div>
 
-        {/* Featured Projects 
+        {/* Featured Projects */}
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
@@ -434,7 +458,7 @@ export default function Community( {onNavigate}: HomeProps) {
             Featured Community Projects
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {featuredProjects.map((project, index) => (
+            {projects.map((project, index) => (
               <motion.div
                 key={project.id}
                 initial={{ opacity: 0, y: 50 }}
@@ -512,9 +536,9 @@ export default function Community( {onNavigate}: HomeProps) {
               </motion.div>
             ))}
           </div>
-        </motion.div> */}
+        </motion.div>
 
-        {/* Upcoming Events 
+        {/* Upcoming Events */}
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
@@ -525,7 +549,7 @@ export default function Community( {onNavigate}: HomeProps) {
             Upcoming Events
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {upcomingEvents.map((event, index) => (
+            {events.map((event, index) => (
               <motion.div
                 key={event.id}
                 initial={{ opacity: 0, y: 30 }}
@@ -574,9 +598,9 @@ export default function Community( {onNavigate}: HomeProps) {
               </motion.div>
             ))}
           </div>
-        </motion.div>*/}
+        </motion.div>
 
-        {/* Testimonials 
+        {/* Testimonials */}
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
@@ -623,7 +647,7 @@ export default function Community( {onNavigate}: HomeProps) {
               </motion.div>
             ))}
           </div>
-        </motion.div> */}
+        </motion.div>
 
         {/* Join CTA */}
         <motion.div
@@ -640,9 +664,13 @@ export default function Community( {onNavigate}: HomeProps) {
             journey towards sustainable impact.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            
             <Button
-             onClick={() => onNavigate?.("contact")}
+              variant="outline"
+              className="bg-white text-gray-900 hover:bg-gray-100 px-8 py-3 rounded-full"
+            >
+              Join Community
+            </Button>
+            <Button
               variant="outline"
               className="bg-white text-gray-900 hover:bg-gray-100 px-8 py-3 rounded-full"
             >

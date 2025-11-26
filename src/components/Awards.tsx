@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { Award, Trophy, Star, Medal } from "lucide-react";
 import {
@@ -11,42 +11,34 @@ import { Badge } from "./ui/badge";
 import climateNeutralAward from 'figma:asset/8d86444612d842f0a62ae183b8e3ede8a1f353dc.png';
 import climateNeutralHeroes from 'figma:asset/978e9bf39355758944f80e53089e3561bd792628.png';
 
-
-interface HomeProps {
-  onNavigate?: (tab: string) => void;
-}
-
-
-
-const awards = [
+const defaultAwards = [
   {
     id: 1,
-    title: "Name of Publication",
-    organizationImage: "Book Image",
+    title: "SDG Action Award 2024",
+    organization: "UN Global Compact",
     category: "Climate Action",
-    year: "2025",
+    year: "2024",
     description:
       "Outstanding contribution to climate action initiatives and carbon neutrality goals.",
     icon: <Trophy className="w-6 h-6" />,
     color: "from-yellow-400 to-yellow-600",
-    sdg: "Month",
+    sdg: 13,
   },
   {
     id: 2,
-    title: "Name of Publication",
-    organization: "Book Image",
+    title: "Sustainable Innovation Prize",
+    organization: "World Economic Forum",
     category: "Clean Energy",
-    year: "2025",
+    year: "2023",
     description:
       "Revolutionary approach to affordable and clean energy solutions in developing countries.",
     icon: <Award className="w-6 h-6" />,
     color: "from-blue-400 to-blue-600",
-    sdg: "Month",
+    sdg: 7,
   },
 ];
 
-
-const achievementStats = [
+const defaultAchievementStats = [
   {
     label: "Nominated Individuals",
     value: "25+",
@@ -69,8 +61,46 @@ const achievementStats = [
   },
 ];
 
+export default function Awards() {
+  // Load awards and stats from localStorage or use defaults
+  const [awards, setAwards] = useState(defaultAwards);
+  const [achievementStats, setAchievementStats] = useState(defaultAchievementStats);
+  
+  useEffect(() => {
+    const savedAwardsData = localStorage.getItem('awardsData');
+    if (savedAwardsData) {
+      try {
+        const parsed = JSON.parse(savedAwardsData);
+        if (parsed.awards && Array.isArray(parsed.awards) && parsed.awards.length > 0) {
+          // Restore icon JSX elements
+          const awardsWithIcons = parsed.awards.map((award: any) => ({
+            ...award,
+            icon: <Trophy className="w-6 h-6" />
+          }));
+          setAwards(awardsWithIcons);
+        }
+        if (parsed.stats && Array.isArray(parsed.stats) && parsed.stats.length > 0) {
+          // Restore icon JSX elements
+          const statsWithIcons = parsed.stats.map((stat: any, index: number) => {
+            const icons = [
+              <Trophy className="w-6 h-6" />,
+              <Star className="w-6 h-6" />,
+              <Award className="w-6 h-6" />,
+              <Medal className="w-6 h-6" />
+            ];
+            return {
+              ...stat,
+              icon: icons[index] || <Trophy className="w-6 h-6" />
+            };
+          });
+          setAchievementStats(statsWithIcons);
+        }
+      } catch (error) {
+        console.error('Error loading awards from localStorage:', error);
+      }
+    }
+  }, []);
 
-export default function Awards({ onNavigate }: HomeProps) {
   return (
     <div className="min-h-screen py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -243,7 +273,7 @@ export default function Awards({ onNavigate }: HomeProps) {
                   <div className="flex items-center justify-center lg:justify-start gap-2">
                     <Star className="w-5 h-5 text-yellow-500" />
                     <span className="text-gray-700 font-medium">
-                      Presented by Asian Responsible Enterprise Awards
+                      Presented by Climate Neutral Heroes Initiative
                     </span>
                   </div>
                 </div>
@@ -273,7 +303,7 @@ export default function Awards({ onNavigate }: HomeProps) {
                     <Badge className="bg-gradient-to-r from-blue-400 to-blue-600 text-white">
                       Neutral Award
                     </Badge>
-                    <Badge variant="outline">2025</Badge>
+                    <Badge variant="outline">2023</Badge>
                   </div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-3">
                     Climate Neutral Awards
@@ -287,7 +317,7 @@ export default function Awards({ onNavigate }: HomeProps) {
                   <div className="flex items-center justify-center lg:justify-start gap-2">
                     <Star className="w-5 h-5 text-blue-500" />
                     <span className="text-gray-700 font-medium">
-                      Presented by Asian Responsible Enterprise Awards
+                      Presented by Climate Neutral Certified
                     </span>
                   </div>
                 </div>
@@ -322,9 +352,6 @@ export default function Awards({ onNavigate }: HomeProps) {
           ))}
         </motion.div>
 
-        <h2 className="text-3xl font-bold text-center mb-12 bg-gradient-to-r from-yellow-500 to-blue-600 bg-clip-text text-transparent">
-            Publications
-          </h2>
         {/* Awards Grid */}
         <motion.div
           initial={{ opacity: 0, y: 50 }}
@@ -354,7 +381,7 @@ export default function Awards({ onNavigate }: HomeProps) {
                         variant="outline"
                         className="text-black"
                       >
-                        {award.sdg}
+                        SDG {award.sdg}
                       </Badge>
                       <Badge
                         variant="outline"
@@ -367,17 +394,9 @@ export default function Awards({ onNavigate }: HomeProps) {
                   <CardTitle className="text-xl group-hover:text-blue-600 transition-colors duration-200 dark:text-black mb-8">
                     {award.title}
                   </CardTitle>
-                  <div className="flex items-center justify-center w-full">
-                    <div className="w-full lg:w-64 h-48 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl border-2 border-blue-300 flex items-center justify-center group hover:from-blue-200 hover:to-blue-300 transition-all duration-300 overflow-hidden">
-                      <motion.img 
-                        src={award.organizationImage} 
-                        alt={award.title}
-                        className="w-full h-full object-contain p-2 rounded-lg"
-                        whileHover={{ scale: 1.05 }}
-                        transition={{ duration: 0.3 }}
-                      />
-                    </div>
-                  </div>
+                  <p className="text-sm text-gray-500 font-medium">
+                    {award.organization}
+                  </p>
                 </CardHeader>
                 <CardContent>
                   <div className="mb-4">
@@ -411,7 +430,6 @@ export default function Awards({ onNavigate }: HomeProps) {
             lasting change for a sustainable future.
           </p>
           <motion.button
-            onClick={() => onNavigate?.("contact")}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="bg-white text-gray-900 px-6 sm:px-8 py-3 sm:py-4 rounded-full font-semibold hover:bg-gray-100 transition-colors duration-200 text-sm sm:text-base"

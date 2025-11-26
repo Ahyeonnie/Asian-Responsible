@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import {
   Target,
@@ -17,7 +17,7 @@ import {
 import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
 
-const missionPillars = [
+const defaultMissionPillars = [
   {
     icon: <Award className="w-8 h-8" />,
     title: "Corporate Social Responsibility",
@@ -168,6 +168,43 @@ const benefitsContent = {
 
 export default function Mission() {
   const [activeBenefitCategory, setActiveBenefitCategory] = useState("recognition");
+  
+  // Load mission content from localStorage or use defaults
+  const [missionPillars, setMissionPillars] = useState(defaultMissionPillars);
+  const [objectivesData, setObjectivesData] = useState(objectives);
+  const [heroTitle, setHeroTitle] = useState("Our Mission");
+  const [heroSubtitle, setHeroSubtitle] = useState(
+    "We are dedicated to advancing corporate social responsibility and environmental sustainability across Asia and the Pacific by recognizing and celebrating exemplary leadership in ethical governance, climate action, and green innovation."
+  );
+
+  useEffect(() => {
+    const saved = localStorage.getItem('missionContent');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.heroTitle) setHeroTitle(parsed.heroTitle);
+        if (parsed.heroSubtitle) setHeroSubtitle(parsed.heroSubtitle);
+        if (parsed.pillars && Array.isArray(parsed.pillars) && parsed.pillars.length > 0) {
+          // Restore icon JSX elements
+          const pillarsWithIcons = parsed.pillars.map((pillar: any) => ({
+            ...pillar,
+            icon: <Award className="w-8 h-8" />
+          }));
+          setMissionPillars(pillarsWithIcons);
+        }
+        if (parsed.objectives && Array.isArray(parsed.objectives) && parsed.objectives.length > 0) {
+          // Restore icon JSX elements
+          const objectivesWithIcons = parsed.objectives.map((obj: any) => ({
+            ...obj,
+            icon: <Target className="w-8 h-8" />
+          }));
+          setObjectivesData(objectivesWithIcons);
+        }
+      } catch (error) {
+        console.error('Error loading mission content:', error);
+      }
+    }
+  }, []);
 
   return (
     <div className="min-h-screen py-20">
@@ -180,21 +217,10 @@ export default function Mission() {
           className="text-center mb-20"
         >
           <h1 className="text-4xl md:text-6xl text-black font-bold mb-6 dark:text-white">
-            Our Mission
+            {heroTitle}
           </h1>
           <p className="text-xl text-gray-600 max-w-4xl mx-auto dark:text-white mb-8">
-           We are dedicated to advancing corporate social
-responsibility and environmental sustainability across
-Asia and the Pacific by recognizing and celebrating
-exemplary leadership in ethical governance, climate
-action, and green innovation. Through our awards
-programs, we inspire businesses, organizations, and
-individuals to adopt science-based strategies, reduce
-carbon footprints, and align with global sustainability
-goals. Our mission is to catalyze a low-carbon
-economy, foster climate resilience, and promote
-responsible enterprise practices that harmonize
-economic growth with planetary stewardship.
+            {heroSubtitle}
           </p>
         </motion.div>
 
@@ -272,7 +298,7 @@ impact across Asia and the Pacific.
             Our Objectives
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {objectives.map((objective, index) => (
+            {objectivesData.map((objective, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 50 }}
