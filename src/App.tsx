@@ -37,7 +37,12 @@ const navItems = [
 export default function App() {
   const [activeTab, setActiveTab] = useState("home");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    // Load the owner's default theme mode preference
+    const defaultMode = localStorage.getItem('defaultThemeMode');
+    return defaultMode === 'dark';
+  });
+  const [designTheme, setDesignTheme] = useState<"playful" | "corporate">("playful");
   const [mousePosition, setMousePosition] = useState({
     x: 0,
     y: 0,
@@ -59,9 +64,29 @@ export default function App() {
       setShowDashboard(true);
     }
     
+    // Load saved design theme
+    const savedTheme = localStorage.getItem('designTheme');
+    if (savedTheme === 'corporate' || savedTheme === 'playful') {
+      setDesignTheme(savedTheme);
+    }
+    
     // Hint for admin access (will only show in browser console)
     console.log('%c🔐 Admin Access Hint', 'color: #fbbf24; font-size: 16px; font-weight: bold;');
     console.log('%cClick the logo 5 times quickly to access the admin dashboard', 'color: #60a5fa; font-size: 14px;');
+  }, []);
+
+  // Listen for theme changes from dashboard
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedTheme = localStorage.getItem('designTheme');
+      if (savedTheme === 'corporate' || savedTheme === 'playful') {
+        setDesignTheme(savedTheme);
+        console.log(`%c🎨 Design Theme Changed to: ${savedTheme.toUpperCase()}`, `color: ${savedTheme === 'corporate' ? '#1e3a8a' : '#fbbf24'}; font-size: 14px; font-weight: bold;`);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   // Reset logo click count after 2 seconds
@@ -148,13 +173,17 @@ export default function App() {
   return (
       <div
         className={`min-h-screen transition-all duration-500 relative overflow-hidden ${
-          isDark
-            ? "bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800"
-            : "bg-gradient-to-br from-yellow-50 via-blue-50 to-green-50"
+          designTheme === 'corporate'
+            ? isDark
+              ? "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
+              : "bg-gradient-to-br from-gray-50 via-white to-gray-100"
+            : isDark
+              ? "bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800"
+              : "bg-gradient-to-br from-yellow-50 via-blue-50 to-green-50"
         }`}
       >
-        {/* Light mode nature background */}
-        {!isDark && (
+        {/* Light mode nature background - ONLY FOR PLAYFUL THEME */}
+        {!isDark && designTheme === 'playful' && (
           <>
             {/* Nature background pattern */}
             <div className="fixed inset-0 pointer-events-none z-0">
@@ -330,7 +359,7 @@ export default function App() {
         )}
 
         {/* Dark mode floating particles */}
-        {isDark && (
+        {isDark && designTheme === 'playful' && (
           <div className="fixed inset-0 overflow-hidden pointer-events-none z-10">
             {[...Array(20)].map((_, i) => (
               <motion.div
@@ -357,7 +386,7 @@ export default function App() {
         )}
   
         {/* Mouse cursor glow effect for dark mode */}
-        {isDark && (
+        {isDark && designTheme === 'playful' && (
           <motion.div
             className="fixed pointer-events-none z-20 mix-blend-difference"
             style={{
@@ -387,12 +416,16 @@ export default function App() {
             stiffness: 100,
           }}
           className={`sticky top-0 z-50 transition-all duration-500 ${
-            isDark
-              ? "bg-slate-900/95 backdrop-blur-xl border-b border-yellow-400/20 shadow-2xl shadow-yellow-400/10"
-              : "bg-white/90 backdrop-blur-xl border-b border-gold/20 shadow-xl"
+            designTheme === 'corporate'
+              ? isDark
+                ? "bg-slate-900/95 backdrop-blur-xl border-b border-gray-700 shadow-lg"
+                : "bg-white/95 backdrop-blur-xl border-b border-gray-200 shadow-md"
+              : isDark
+                ? "bg-slate-900/95 backdrop-blur-xl border-b border-yellow-400/20 shadow-2xl shadow-yellow-400/10"
+                : "bg-white/90 backdrop-blur-xl border-b border-gold/20 shadow-xl"
           }`}
         >
-          {isDark && (
+          {isDark && designTheme === 'playful' && (
             <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/5 via-blue-400/5 to-green-400/5"></div>
           )}
   

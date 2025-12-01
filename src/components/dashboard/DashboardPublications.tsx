@@ -10,8 +10,9 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
-import { Save, Plus, Trash2, Edit, Book } from "lucide-react";
+import { Save, Plus, Trash2, Edit, Book, Link as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
+import { FileUpload } from "./FileUpload";
 
 interface Publication {
   id: number;
@@ -231,6 +232,9 @@ export default function DashboardPublications() {
 
       <div className="text-sm text-gray-500 mb-4">
         Total Publications: {publications.length}
+        <span className="ml-2 text-xs text-gray-400">
+          (The Publications page shows 6 items per page with pagination)
+        </span>
       </div>
 
       <div className="grid gap-4">
@@ -386,22 +390,52 @@ export default function DashboardPublications() {
             </div>
 
             <div className="space-y-2">
-              <Label>Cover Image URL *</Label>
-              <Input
-                value={editingPublication.coverImage}
-                onChange={(e) =>
-                  setEditingPublication({
-                    ...editingPublication,
-                    coverImage: e.target.value,
-                  })
-                }
-                placeholder="https://images.unsplash.com/..."
-              />
-              {editingPublication.coverImage && (
-                <img 
-                  src={editingPublication.coverImage} 
-                  alt="Preview" 
-                  className="w-full h-48 object-cover rounded mt-2" 
+              <Label>Cover Image *</Label>
+              <div className="flex gap-2 items-center mb-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={editingPublication.coverImage && !editingPublication.coverImage.startsWith('data:') ? "default" : "outline"}
+                  onClick={() => {
+                    const useUrl = editingPublication.coverImage && editingPublication.coverImage.startsWith('data:');
+                    if (useUrl) {
+                      setEditingPublication({ ...editingPublication, coverImage: '' });
+                    }
+                  }}
+                >
+                  <LinkIcon className="h-4 w-4 mr-2" />
+                  {editingPublication.coverImage && !editingPublication.coverImage.startsWith('data:') ? 'Using URL' : 'Use URL Instead'}
+                </Button>
+              </div>
+              
+              {editingPublication.coverImage && !editingPublication.coverImage.startsWith('data:') ? (
+                <div className="space-y-2">
+                  <Input
+                    value={editingPublication.coverImage}
+                    onChange={(e) =>
+                      setEditingPublication({
+                        ...editingPublication,
+                        coverImage: e.target.value,
+                      })
+                    }
+                    placeholder="https://images.unsplash.com/..."
+                  />
+                  {editingPublication.coverImage && (
+                    <img 
+                      src={editingPublication.coverImage} 
+                      alt="Preview" 
+                      className="w-full h-48 object-cover rounded" 
+                    />
+                  )}
+                </div>
+              ) : (
+                <FileUpload
+                  accept="image/*"
+                  maxSize={5}
+                  currentFile={editingPublication.coverImage}
+                  onUpload={(base64) => setEditingPublication({ ...editingPublication, coverImage: base64 })}
+                  type="image"
+                  label="Upload Cover Image"
                 />
               )}
             </div>

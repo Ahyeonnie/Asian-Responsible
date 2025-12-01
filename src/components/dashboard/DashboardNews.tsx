@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Badge } from '../ui/badge';
 import { FileUpload } from './FileUpload';
+import { ConfirmDialog } from '../ui/confirm-dialog';
 
 interface NewsArticle {
   id: number;
@@ -379,6 +380,21 @@ export default function DashboardNews() {
   const [editingVideo, setEditingVideo] = useState<NewsVideo | null>(null);
   const [editingStory, setEditingStory] = useState<FeaturedStory | null>(null);
   const [loading, setLoading] = useState(false);
+  
+  // Confirmation dialog states
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+    variant?: "default" | "destructive";
+  }>({
+    open: false,
+    title: '',
+    description: '',
+    onConfirm: () => {},
+    variant: 'default'
+  });
 
   // Load data on component mount - sync with website
   useEffect(() => {
@@ -451,23 +467,40 @@ export default function DashboardNews() {
   // Article CRUD operations
   const handleSaveArticle = () => {
     if (editingArticle) {
-      if (editingArticle.id === 0) {
-        const newArticle = { ...editingArticle, id: Date.now() };
-        saveArticles([...articles, newArticle]);
-        toast.success('Article created successfully!');
-      } else {
-        saveArticles(articles.map(a => a.id === editingArticle.id ? editingArticle : a));
-        toast.success('Article updated successfully!');
-      }
-      setEditingArticle(null);
+      const action = editingArticle.id === 0 ? 'create' : 'update';
+      setConfirmDialog({
+        open: true,
+        title: action === 'create' ? 'Create Article' : 'Update Article',
+        description: action === 'create' 
+          ? 'Are you sure you want to create this article? It will be immediately visible on the website.'
+          : 'Are you sure you want to save these changes? The article will be updated on the website.',
+        onConfirm: () => {
+          if (editingArticle.id === 0) {
+            const newArticle = { ...editingArticle, id: Date.now() };
+            saveArticles([...articles, newArticle]);
+            toast.success('Article created successfully!');
+          } else {
+            saveArticles(articles.map(a => a.id === editingArticle.id ? editingArticle : a));
+            toast.success('Article updated successfully!');
+          }
+          setEditingArticle(null);
+        },
+        variant: 'default'
+      });
     }
   };
 
   const handleDeleteArticle = (id: number) => {
-    if (confirm('Are you sure you want to delete this article?')) {
-      saveArticles(articles.filter(a => a.id !== id));
-      toast.success('Article deleted successfully!');
-    }
+    setConfirmDialog({
+      open: true,
+      title: 'Delete Article',
+      description: 'Are you sure you want to delete this article?',
+      onConfirm: () => {
+        saveArticles(articles.filter(a => a.id !== id));
+        toast.success('Article deleted successfully!');
+      },
+      variant: 'destructive'
+    });
   };
 
   // Video CRUD operations
@@ -486,10 +519,16 @@ export default function DashboardNews() {
   };
 
   const handleDeleteVideo = (id: number) => {
-    if (confirm('Are you sure you want to delete this video?')) {
-      saveVideos(videos.filter(v => v.id !== id));
-      toast.success('Video deleted successfully!');
-    }
+    setConfirmDialog({
+      open: true,
+      title: 'Delete Video',
+      description: 'Are you sure you want to delete this video?',
+      onConfirm: () => {
+        saveVideos(videos.filter(v => v.id !== id));
+        toast.success('Video deleted successfully!');
+      },
+      variant: 'destructive'
+    });
   };
 
   // Featured Story CRUD operations
@@ -508,10 +547,16 @@ export default function DashboardNews() {
   };
 
   const handleDeleteStory = (id: number) => {
-    if (confirm('Are you sure you want to delete this featured story?')) {
-      saveFeaturedStories(featuredStories.filter(s => s.id !== id));
-      toast.success('Featured story deleted successfully!');
-    }
+    setConfirmDialog({
+      open: true,
+      title: 'Delete Featured Story',
+      description: 'Are you sure you want to delete this featured story?',
+      onConfirm: () => {
+        saveFeaturedStories(featuredStories.filter(s => s.id !== id));
+        toast.success('Featured story deleted successfully!');
+      },
+      variant: 'destructive'
+    });
   };
 
   return (
@@ -1114,6 +1159,20 @@ export default function DashboardNews() {
           )}
         </TabsContent>
       </Tabs>
+
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog({ ...confirmDialog, open })}
+        title={confirmDialog.title}
+        description={confirmDialog.description}
+        onConfirm={() => {
+          confirmDialog.onConfirm();
+          setConfirmDialog({ ...confirmDialog, open: false });
+        }}
+        variant={confirmDialog.variant}
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

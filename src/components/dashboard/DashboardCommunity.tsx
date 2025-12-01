@@ -10,9 +10,12 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
-import { Save, Plus, Trash2, Edit, Users, Star, Calendar } from "lucide-react";
+import { Badge } from "../ui/badge";
+import { Save, Plus, Trash2, Edit, Users, Star, Calendar, Video, MessageCircle, Link as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { ConfirmDialog } from "../ui/confirm-dialog";
+import { FileUpload } from "./FileUpload";
 
 interface CommunityStats {
   label: string;
@@ -40,10 +43,33 @@ interface CommunityEvent {
   sdg: number;
 }
 
+interface CommunityVideo {
+  id: number;
+  title: string;
+  description: string;
+  thumbnail: string;
+  videoUrl?: string;
+  duration: string;
+  views: string;
+  category: string;
+  featured: boolean;
+}
+
+interface Testimonial {
+  id: number;
+  name: string;
+  role: string;
+  location: string;
+  message: string;
+  avatar: string;
+}
+
 interface CommunityData {
   stats: CommunityStats[];
   projects: Project[];
   events: CommunityEvent[];
+  videos: CommunityVideo[];
+  testimonials: Testimonial[];
 }
 
 const defaultCommunityData: CommunityData = {
@@ -114,6 +140,78 @@ const defaultCommunityData: CommunityData = {
       sdg: 9,
     },
   ],
+  videos: [
+    {
+      id: 1,
+      title: "Community Impact Stories",
+      description: "See how our global community is creating sustainable change in their local regions.",
+      thumbnail: "community impact stories",
+      videoUrl: "",
+      duration: "8:45",
+      views: "125K",
+      category: "Impact Stories",
+      featured: true,
+    },
+    {
+      id: 2,
+      title: "Climate Action Workshop",
+      description: "Learn practical strategies for implementing climate solutions in your community.",
+      thumbnail: "climate workshop presentation",
+      videoUrl: "",
+      duration: "12:30",
+      views: "89K",
+      category: "Educational",
+      featured: false,
+    },
+    {
+      id: 3,
+      title: "Youth Leadership Summit",
+      description: "Young leaders share their innovative approaches to achieving the SDGs.",
+      thumbnail: "youth leaders conference",
+      videoUrl: "",
+      duration: "15:20",
+      views: "67K",
+      category: "Leadership",
+      featured: false,
+    },
+    {
+      id: 4,
+      title: "Partnership Success Stories",
+      description: "Discover how collaboration across sectors is driving meaningful progress.",
+      thumbnail: "partnership collaboration meeting",
+      videoUrl: "",
+      duration: "10:15",
+      views: "43K",
+      category: "Partnerships",
+      featured: false,
+    },
+  ],
+  testimonials: [
+    {
+      id: 1,
+      name: "Maria Santos",
+      role: "Community Organizer",
+      location: "Brazil",
+      message: "This platform has connected me with like-minded individuals working on sustainable solutions in my region.",
+      avatar: "woman professional brazil",
+    },
+    {
+      id: 2,
+      name: "David Chen",
+      role: "Environmental Engineer",
+      location: "Singapore",
+      message: "The collaborative projects here have helped me implement clean energy solutions in my local community.",
+      avatar: "man engineer asian",
+    },
+    {
+      id: 3,
+      name: "Aisha Patel",
+      role: "Social Entrepreneur",
+      location: "India",
+      message: "Through this community, I found partners for my education initiative that has now reached over 10,000 students.",
+      avatar: "woman entrepreneur india",
+    },
+  ],
 };
 
 export default function DashboardCommunity() {
@@ -122,6 +220,23 @@ export default function DashboardCommunity() {
   const [tempStats, setTempStats] = useState<CommunityStats[]>([]);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [editingEvent, setEditingEvent] = useState<CommunityEvent | null>(null);
+  const [editingVideo, setEditingVideo] = useState<CommunityVideo | null>(null);
+  const [editingTestimonial, setEditingTestimonial] = useState<Testimonial | null>(null);
+  
+  // Confirmation dialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+    variant?: "default" | "destructive";
+  }>({
+    open: false,
+    title: '',
+    description: '',
+    onConfirm: () => {},
+    variant: 'default'
+  });
 
   useEffect(() => {
     loadCommunityData();
@@ -132,8 +247,15 @@ export default function DashboardCommunity() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        setCommunityData(parsed);
-        setTempStats(parsed.stats);
+        // Ensure videos and testimonials exist
+        const data = {
+          ...defaultCommunityData,
+          ...parsed,
+          videos: parsed.videos || defaultCommunityData.videos,
+          testimonials: parsed.testimonials || defaultCommunityData.testimonials,
+        };
+        setCommunityData(data);
+        setTempStats(data.stats);
       } catch (error) {
         console.error('Error loading community data:', error);
         saveCommunityData(defaultCommunityData);
@@ -147,14 +269,29 @@ export default function DashboardCommunity() {
     localStorage.setItem('communityData', JSON.stringify(data));
     setCommunityData(data);
     setTempStats(data.stats);
+    
+    // Trigger storage event
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'communityData',
+      newValue: JSON.stringify(data),
+      url: window.location.href
+    }));
   };
 
   // Stats Management
   const handleSaveStats = () => {
-    const updatedData = { ...communityData, stats: tempStats };
-    saveCommunityData(updatedData);
-    setEditingStats(false);
-    toast.success('Community stats updated successfully!');
+    setConfirmDialog({
+      open: true,
+      title: 'Save Community Stats',
+      description: 'Are you sure you want to save these changes? The statistics will be updated on the Community page.',
+      onConfirm: () => {
+        const updatedData = { ...communityData, stats: tempStats };
+        saveCommunityData(updatedData);
+        setEditingStats(false);
+        toast.success('Community stats updated successfully!');
+      },
+      variant: 'default'
+    });
   };
 
   const updateStat = (index: number, field: keyof CommunityStats, value: string) => {
@@ -166,55 +303,177 @@ export default function DashboardCommunity() {
   // Projects Management
   const handleSaveProject = () => {
     if (editingProject) {
-      let updatedProjects;
-      if (editingProject.id === 0) {
-        const newProject = { ...editingProject, id: Date.now() };
-        updatedProjects = [...communityData.projects, newProject];
-        toast.success('Project created successfully!');
-      } else {
-        updatedProjects = communityData.projects.map((p) =>
-          p.id === editingProject.id ? editingProject : p
-        );
-        toast.success('Project updated successfully!');
-      }
-      saveCommunityData({ ...communityData, projects: updatedProjects });
-      setEditingProject(null);
+      const action = editingProject.id === 0 ? 'create' : 'update';
+      setConfirmDialog({
+        open: true,
+        title: action === 'create' ? 'Create Project' : 'Update Project',
+        description: action === 'create'
+          ? 'Are you sure you want to create this project?'
+          : 'Are you sure you want to save these changes?',
+        onConfirm: () => {
+          let updatedProjects;
+          if (editingProject.id === 0) {
+            const newProject = { ...editingProject, id: Date.now() };
+            updatedProjects = [...communityData.projects, newProject];
+            toast.success('Project created successfully!');
+          } else {
+            updatedProjects = communityData.projects.map((p) =>
+              p.id === editingProject.id ? editingProject : p
+            );
+            toast.success('Project updated successfully!');
+          }
+          saveCommunityData({ ...communityData, projects: updatedProjects });
+          setEditingProject(null);
+        },
+        variant: 'default'
+      });
     }
   };
 
   const handleDeleteProject = (id: number) => {
-    if (confirm('Are you sure you want to delete this project?')) {
-      const updatedProjects = communityData.projects.filter((p) => p.id !== id);
-      saveCommunityData({ ...communityData, projects: updatedProjects });
-      toast.success('Project deleted successfully!');
-    }
+    setConfirmDialog({
+      open: true,
+      title: 'Delete Project',
+      description: 'Are you sure you want to delete this project? This action cannot be undone.',
+      onConfirm: () => {
+        const updatedProjects = communityData.projects.filter((p) => p.id !== id);
+        saveCommunityData({ ...communityData, projects: updatedProjects });
+        toast.success('Project deleted successfully!');
+      },
+      variant: 'destructive'
+    });
   };
 
   // Events Management
   const handleSaveEvent = () => {
     if (editingEvent) {
-      let updatedEvents;
-      if (editingEvent.id === 0) {
-        const newEvent = { ...editingEvent, id: Date.now() };
-        updatedEvents = [...communityData.events, newEvent];
-        toast.success('Event created successfully!');
-      } else {
-        updatedEvents = communityData.events.map((e) =>
-          e.id === editingEvent.id ? editingEvent : e
-        );
-        toast.success('Event updated successfully!');
-      }
-      saveCommunityData({ ...communityData, events: updatedEvents });
-      setEditingEvent(null);
+      const action = editingEvent.id === 0 ? 'create' : 'update';
+      setConfirmDialog({
+        open: true,
+        title: action === 'create' ? 'Create Event' : 'Update Event',
+        description: action === 'create'
+          ? 'Are you sure you want to create this event?'
+          : 'Are you sure you want to save these changes?',
+        onConfirm: () => {
+          let updatedEvents;
+          if (editingEvent.id === 0) {
+            const newEvent = { ...editingEvent, id: Date.now() };
+            updatedEvents = [...communityData.events, newEvent];
+            toast.success('Event created successfully!');
+          } else {
+            updatedEvents = communityData.events.map((e) =>
+              e.id === editingEvent.id ? editingEvent : e
+            );
+            toast.success('Event updated successfully!');
+          }
+          saveCommunityData({ ...communityData, events: updatedEvents });
+          setEditingEvent(null);
+        },
+        variant: 'default'
+      });
     }
   };
 
   const handleDeleteEvent = (id: number) => {
-    if (confirm('Are you sure you want to delete this event?')) {
-      const updatedEvents = communityData.events.filter((e) => e.id !== id);
-      saveCommunityData({ ...communityData, events: updatedEvents });
-      toast.success('Event deleted successfully!');
+    setConfirmDialog({
+      open: true,
+      title: 'Delete Event',
+      description: 'Are you sure you want to delete this event? This action cannot be undone.',
+      onConfirm: () => {
+        const updatedEvents = communityData.events.filter((e) => e.id !== id);
+        saveCommunityData({ ...communityData, events: updatedEvents });
+        toast.success('Event deleted successfully!');
+      },
+      variant: 'destructive'
+    });
+  };
+
+  // Videos Management
+  const handleSaveVideo = () => {
+    if (editingVideo) {
+      const action = editingVideo.id === 0 ? 'create' : 'update';
+      setConfirmDialog({
+        open: true,
+        title: action === 'create' ? 'Create Video' : 'Update Video',
+        description: action === 'create'
+          ? 'Are you sure you want to add this video to Community in Action?'
+          : 'Are you sure you want to save these changes?',
+        onConfirm: () => {
+          let updatedVideos;
+          if (editingVideo.id === 0) {
+            const newVideo = { ...editingVideo, id: Date.now() };
+            updatedVideos = [...communityData.videos, newVideo];
+            toast.success('Video created successfully!');
+          } else {
+            updatedVideos = communityData.videos.map((v) =>
+              v.id === editingVideo.id ? editingVideo : v
+            );
+            toast.success('Video updated successfully!');
+          }
+          saveCommunityData({ ...communityData, videos: updatedVideos });
+          setEditingVideo(null);
+        },
+        variant: 'default'
+      });
     }
+  };
+
+  const handleDeleteVideo = (id: number) => {
+    setConfirmDialog({
+      open: true,
+      title: 'Delete Video',
+      description: 'Are you sure you want to delete this video? This action cannot be undone.',
+      onConfirm: () => {
+        const updatedVideos = communityData.videos.filter((v) => v.id !== id);
+        saveCommunityData({ ...communityData, videos: updatedVideos });
+        toast.success('Video deleted successfully!');
+      },
+      variant: 'destructive'
+    });
+  };
+
+  // Testimonials Management
+  const handleSaveTestimonial = () => {
+    if (editingTestimonial) {
+      const action = editingTestimonial.id === 0 ? 'create' : 'update';
+      setConfirmDialog({
+        open: true,
+        title: action === 'create' ? 'Create Testimonial' : 'Update Testimonial',
+        description: action === 'create'
+          ? 'Are you sure you want to add this testimonial to Community Voices?'
+          : 'Are you sure you want to save these changes?',
+        onConfirm: () => {
+          let updatedTestimonials;
+          if (editingTestimonial.id === 0) {
+            const newTestimonial = { ...editingTestimonial, id: Date.now() };
+            updatedTestimonials = [...communityData.testimonials, newTestimonial];
+            toast.success('Testimonial created successfully!');
+          } else {
+            updatedTestimonials = communityData.testimonials.map((t) =>
+              t.id === editingTestimonial.id ? editingTestimonial : t
+            );
+            toast.success('Testimonial updated successfully!');
+          }
+          saveCommunityData({ ...communityData, testimonials: updatedTestimonials });
+          setEditingTestimonial(null);
+        },
+        variant: 'default'
+      });
+    }
+  };
+
+  const handleDeleteTestimonial = (id: number) => {
+    setConfirmDialog({
+      open: true,
+      title: 'Delete Testimonial',
+      description: 'Are you sure you want to delete this testimonial? This action cannot be undone.',
+      onConfirm: () => {
+        const updatedTestimonials = communityData.testimonials.filter((t) => t.id !== id);
+        saveCommunityData({ ...communityData, testimonials: updatedTestimonials });
+        toast.success('Testimonial deleted successfully!');
+      },
+      variant: 'destructive'
+    });
   };
 
   return (
@@ -225,13 +484,13 @@ export default function DashboardCommunity() {
             Community Management
           </h1>
           <p className="text-gray-500 mt-1">
-            Manage community stats, projects, and events
+            Manage community stats, projects, events, videos, and testimonials
           </p>
         </div>
       </div>
 
       <Tabs defaultValue="stats" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-2xl">
+        <TabsList className="grid w-full grid-cols-5 max-w-4xl">
           <TabsTrigger value="stats">
             <Users className="h-4 w-4 mr-2" />
             Stats (4)
@@ -243,6 +502,14 @@ export default function DashboardCommunity() {
           <TabsTrigger value="events">
             <Calendar className="h-4 w-4 mr-2" />
             Events ({communityData.events.length})
+          </TabsTrigger>
+          <TabsTrigger value="videos">
+            <Video className="h-4 w-4 mr-2" />
+            Videos ({communityData.videos.length})
+          </TabsTrigger>
+          <TabsTrigger value="testimonials">
+            <MessageCircle className="h-4 w-4 mr-2" />
+            Voices ({communityData.testimonials.length})
           </TabsTrigger>
         </TabsList>
 
@@ -329,7 +596,7 @@ export default function DashboardCommunity() {
           </Card>
         </TabsContent>
 
-        {/* Projects Tab */}
+        {/* Projects Tab - Continue from previous implementation... */}
         <TabsContent value="projects" className="space-y-4">
           <div className="flex justify-end">
             <Button
@@ -505,7 +772,7 @@ export default function DashboardCommunity() {
           )}
         </TabsContent>
 
-        {/* Events Tab */}
+        {/* Events Tab - Same structure as before */}
         <TabsContent value="events" className="space-y-4">
           <div className="flex justify-end">
             <Button
@@ -667,7 +934,397 @@ export default function DashboardCommunity() {
             </Card>
           )}
         </TabsContent>
+
+        {/* Videos Tab - NEW! Community in Action */}
+        <TabsContent value="videos" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Community in Action Videos</CardTitle>
+                  <CardDescription>Manage video content for the Community in Action section</CardDescription>
+                </div>
+                <Button
+                  onClick={() =>
+                    setEditingVideo({
+                      id: 0,
+                      title: "",
+                      description: "",
+                      thumbnail: "",
+                      videoUrl: "",
+                      duration: "",
+                      views: "0",
+                      category: "",
+                      featured: false,
+                    })
+                  }
+                  className="bg-gradient-to-r from-yellow-500 to-blue-600"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Video
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4">
+                {communityData.videos.map((video) => (
+                  <Card key={video.id} className={video.featured ? "border-2 border-purple-500" : ""}>
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-start gap-4">
+                        {/* Thumbnail Preview */}
+                        {video.thumbnail && (
+                          <div className="flex-shrink-0">
+                            <img
+                              src={video.thumbnail.startsWith('data:') || video.thumbnail.startsWith('http') 
+                                ? video.thumbnail 
+                                : `https://images.unsplash.com/200x120?${video.thumbnail}`}
+                              alt={video.title}
+                              className="w-32 h-20 object-cover rounded-lg"
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="text-lg font-semibold">{video.title}</h3>
+                            {video.featured && (
+                              <Badge className="bg-purple-500">Featured</Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600 mb-2">{video.description}</p>
+                          <div className="flex gap-4 text-xs text-gray-500">
+                            <span>⏱️ {video.duration}</span>
+                            <span>👁️ {video.views} views</span>
+                            <span>📁 {video.category}</span>
+                          </div>
+                          {video.videoUrl && (
+                            <p className="text-xs text-blue-600 mt-2 truncate">
+                              🔗 {video.videoUrl}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-2 flex-shrink-0">
+                          <Button size="sm" variant="outline" onClick={() => setEditingVideo(video)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-red-500 hover:bg-red-50"
+                            onClick={() => handleDeleteVideo(video.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {editingVideo && (
+            <Card className="border-2 border-blue-500">
+              <CardHeader>
+                <CardTitle>{editingVideo.id === 0 ? "New Video" : "Edit Video"}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Video Title *</Label>
+                  <Input
+                    value={editingVideo.title}
+                    onChange={(e) =>
+                      setEditingVideo({ ...editingVideo, title: e.target.value })
+                    }
+                    placeholder="Community Impact Stories"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Description *</Label>
+                  <Textarea
+                    value={editingVideo.description}
+                    onChange={(e) =>
+                      setEditingVideo({ ...editingVideo, description: e.target.value })
+                    }
+                    placeholder="Video description..."
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Video Thumbnail Image</Label>
+                  <FileUpload
+                    accept="image/*"
+                    maxSize={5}
+                    currentFile={editingVideo.thumbnail}
+                    onUpload={(base64) =>
+                      setEditingVideo({ ...editingVideo, thumbnail: base64 })
+                    }
+                    type="image"
+                    label="Upload Thumbnail or enter keywords"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Upload an image or enter keywords (e.g., "climate workshop presentation")
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Video URL (YouTube, Vimeo, etc.)</Label>
+                  <Input
+                    value={editingVideo.videoUrl || ""}
+                    onChange={(e) =>
+                      setEditingVideo({ ...editingVideo, videoUrl: e.target.value })
+                    }
+                    placeholder="https://www.youtube.com/watch?v=..."
+                  />
+                  <p className="text-xs text-gray-500">
+                    Optional: Add a link to the video
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Duration *</Label>
+                    <Input
+                      value={editingVideo.duration}
+                      onChange={(e) =>
+                        setEditingVideo({ ...editingVideo, duration: e.target.value })
+                      }
+                      placeholder="8:45"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Views *</Label>
+                    <Input
+                      value={editingVideo.views}
+                      onChange={(e) =>
+                        setEditingVideo({ ...editingVideo, views: e.target.value })
+                      }
+                      placeholder="125K"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Category *</Label>
+                    <Input
+                      value={editingVideo.category}
+                      onChange={(e) =>
+                        setEditingVideo({ ...editingVideo, category: e.target.value })
+                      }
+                      placeholder="Impact Stories"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="videoFeatured"
+                    checked={editingVideo.featured}
+                    onChange={(e) =>
+                      setEditingVideo({ ...editingVideo, featured: e.target.checked })
+                    }
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor="videoFeatured">Featured Video (shown at top)</Label>
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setEditingVideo(null)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSaveVideo}
+                    className="bg-gradient-to-r from-yellow-500 to-blue-600"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Video
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Testimonials Tab - NEW! Community Voices */}
+        <TabsContent value="testimonials" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Community Voices Testimonials</CardTitle>
+                  <CardDescription>Manage testimonials for the Community Voices section</CardDescription>
+                </div>
+                <Button
+                  onClick={() =>
+                    setEditingTestimonial({
+                      id: 0,
+                      name: "",
+                      role: "",
+                      location: "",
+                      message: "",
+                      avatar: "",
+                    })
+                  }
+                  className="bg-gradient-to-r from-yellow-500 to-blue-600"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Testimonial
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4">
+                {communityData.testimonials.map((testimonial) => (
+                  <Card key={testimonial.id}>
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-start gap-4">
+                        {/* Avatar Preview */}
+                        {testimonial.avatar && (
+                          <div className="flex-shrink-0">
+                            <img
+                              src={testimonial.avatar.startsWith('data:') || testimonial.avatar.startsWith('http') 
+                                ? testimonial.avatar 
+                                : `https://images.unsplash.com/80x80?${testimonial.avatar}`}
+                              alt={testimonial.name}
+                              className="w-16 h-16 rounded-full object-cover"
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold mb-1">{testimonial.name}</h3>
+                          <p className="text-sm text-gray-600 mb-2">
+                            {testimonial.role} • {testimonial.location}
+                          </p>
+                          <p className="text-sm text-gray-700 italic mb-2">
+                            "{testimonial.message}"
+                          </p>
+                        </div>
+                        <div className="flex gap-2 flex-shrink-0">
+                          <Button size="sm" variant="outline" onClick={() => setEditingTestimonial(testimonial)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-red-500 hover:bg-red-50"
+                            onClick={() => handleDeleteTestimonial(testimonial.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {editingTestimonial && (
+            <Card className="border-2 border-blue-500">
+              <CardHeader>
+                <CardTitle>{editingTestimonial.id === 0 ? "New Testimonial" : "Edit Testimonial"}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Name *</Label>
+                    <Input
+                      value={editingTestimonial.name}
+                      onChange={(e) =>
+                        setEditingTestimonial({ ...editingTestimonial, name: e.target.value })
+                      }
+                      placeholder="Maria Santos"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Location *</Label>
+                    <Input
+                      value={editingTestimonial.location}
+                      onChange={(e) =>
+                        setEditingTestimonial({ ...editingTestimonial, location: e.target.value })
+                      }
+                      placeholder="Brazil"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Role/Title *</Label>
+                  <Input
+                    value={editingTestimonial.role}
+                    onChange={(e) =>
+                      setEditingTestimonial({ ...editingTestimonial, role: e.target.value })
+                    }
+                    placeholder="Community Organizer"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Testimonial Message *</Label>
+                  <Textarea
+                    value={editingTestimonial.message}
+                    onChange={(e) =>
+                      setEditingTestimonial({ ...editingTestimonial, message: e.target.value })
+                    }
+                    placeholder="This platform has connected me with..."
+                    rows={4}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Avatar Image</Label>
+                  <FileUpload
+                    accept="image/*"
+                    maxSize={5}
+                    currentFile={editingTestimonial.avatar}
+                    onUpload={(base64) =>
+                      setEditingTestimonial({ ...editingTestimonial, avatar: base64 })
+                    }
+                    type="image"
+                    label="Upload Avatar or enter keywords"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Upload an image or enter keywords (e.g., "woman professional brazil")
+                  </p>
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setEditingTestimonial(null)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSaveTestimonial}
+                    className="bg-gradient-to-r from-yellow-500 to-blue-600"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Testimonial
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
       </Tabs>
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog({ ...confirmDialog, open })}
+        title={confirmDialog.title}
+        description={confirmDialog.description}
+        onConfirm={() => {
+          confirmDialog.onConfirm();
+          setConfirmDialog({ ...confirmDialog, open: false });
+        }}
+        variant={confirmDialog.variant}
+        confirmText={confirmDialog.variant === 'destructive' ? 'Delete' : 'Save Changes'}
+        cancelText="Cancel"
+      />
     </div>
   );
 }

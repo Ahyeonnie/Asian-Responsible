@@ -10,8 +10,10 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
-import { Save, Plus, Trash2, Edit, Calendar, Image as ImageIcon } from "lucide-react";
+import { Save, Plus, Trash2, Edit, Calendar, Image as ImageIcon, Link as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
+import { FileUpload } from "./FileUpload";
+import { ConfirmDialog } from "../ui/confirm-dialog";
 
 interface EventPhoto {
   id: number;
@@ -61,6 +63,21 @@ export default function DashboardEvents() {
   const [photoUrl, setPhotoUrl] = useState("");
   const [photoCaption, setPhotoCaption] = useState("");
   const [editingPhotoId, setEditingPhotoId] = useState<number | null>(null);
+  
+  // Confirmation dialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+    variant?: "default" | "destructive";
+  }>({
+    open: false,
+    title: '',
+    description: '',
+    onConfirm: () => {},
+    variant: 'default'
+  });
 
   useEffect(() => {
     loadEvents();
@@ -114,11 +131,17 @@ export default function DashboardEvents() {
   };
 
   const handleDelete = (id: number) => {
-    if (confirm('Are you sure you want to delete this event?')) {
-      const updatedEvents = events.filter((e) => e.id !== id);
-      saveEvents(updatedEvents);
-      toast.success('Event deleted successfully!');
-    }
+    setConfirmDialog({
+      open: true,
+      title: 'Delete Event',
+      description: 'Are you sure you want to delete this event?',
+      onConfirm: () => {
+        const updatedEvents = events.filter((e) => e.id !== id);
+        saveEvents(updatedEvents);
+        toast.success('Event deleted successfully!');
+      },
+      variant: 'destructive'
+    });
   };
 
   const addPhoto = () => {
@@ -204,6 +227,9 @@ export default function DashboardEvents() {
 
       <div className="text-sm text-gray-500 mb-4">
         Total Events: {events.length}
+        <span className="ml-2 text-xs text-gray-400">
+          (The Events page shows events filtered by selected month/year)
+        </span>
       </div>
 
       <div className="grid gap-4">
@@ -357,12 +383,40 @@ export default function DashboardEvents() {
               <Card className="p-4 border-dashed">
                 <div className="space-y-3">
                   <div className="space-y-2">
-                    <Label className="text-sm">Photo URL</Label>
-                    <Input
-                      value={photoUrl}
-                      onChange={(e) => setPhotoUrl(e.target.value)}
-                      placeholder="https://images.unsplash.com/..."
-                    />
+                    <Label className="text-sm">Photo</Label>
+                    <div className="flex gap-2 items-center mb-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={photoUrl && !photoUrl.startsWith('data:') ? "default" : "outline"}
+                        onClick={() => {
+                          const useUrl = photoUrl && photoUrl.startsWith('data:');
+                          if (useUrl) {
+                            setPhotoUrl('');
+                          }
+                        }}
+                      >
+                        <LinkIcon className="h-4 w-4 mr-2" />
+                        {photoUrl && !photoUrl.startsWith('data:') ? 'Using URL' : 'Use URL Instead'}
+                      </Button>
+                    </div>
+                    
+                    {photoUrl && !photoUrl.startsWith('data:') ? (
+                      <Input
+                        value={photoUrl}
+                        onChange={(e) => setPhotoUrl(e.target.value)}
+                        placeholder="https://images.unsplash.com/..."
+                      />
+                    ) : (
+                      <FileUpload
+                        accept="image/*"
+                        maxSize={5}
+                        currentFile={photoUrl}
+                        onUpload={(base64) => setPhotoUrl(base64)}
+                        type="image"
+                        label="Upload Event Photo"
+                      />
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label className="text-sm">Caption</Label>
@@ -397,12 +451,40 @@ export default function DashboardEvents() {
                       {editingPhotoId === photo.id ? (
                         <div className="space-y-3">
                           <div className="space-y-2">
-                            <Label className="text-sm">Photo URL</Label>
-                            <Input
-                              value={photoUrl}
-                              onChange={(e) => setPhotoUrl(e.target.value)}
-                              placeholder="https://images.unsplash.com/..."
-                            />
+                            <Label className="text-sm">Photo</Label>
+                            <div className="flex gap-2 items-center mb-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant={photoUrl && !photoUrl.startsWith('data:') ? "default" : "outline"}
+                                onClick={() => {
+                                  const useUrl = photoUrl && photoUrl.startsWith('data:');
+                                  if (useUrl) {
+                                    setPhotoUrl('');
+                                  }
+                                }}
+                              >
+                                <LinkIcon className="h-4 w-4 mr-2" />
+                                {photoUrl && !photoUrl.startsWith('data:') ? 'Using URL' : 'Use URL Instead'}
+                              </Button>
+                            </div>
+                            
+                            {photoUrl && !photoUrl.startsWith('data:') ? (
+                              <Input
+                                value={photoUrl}
+                                onChange={(e) => setPhotoUrl(e.target.value)}
+                                placeholder="https://images.unsplash.com/..."
+                              />
+                            ) : (
+                              <FileUpload
+                                accept="image/*"
+                                maxSize={5}
+                                currentFile={photoUrl}
+                                onUpload={(base64) => setPhotoUrl(base64)}
+                                type="image"
+                                label="Upload Event Photo"
+                              />
+                            )}
                           </div>
                           <div className="space-y-2">
                             <Label className="text-sm">Caption</Label>
@@ -497,6 +579,21 @@ export default function DashboardEvents() {
           </CardContent>
         </Card>
       )}
+      
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog({ ...confirmDialog, open })}
+        title={confirmDialog.title}
+        description={confirmDialog.description}
+        onConfirm={() => {
+          confirmDialog.onConfirm();
+          setConfirmDialog({ ...confirmDialog, open: false });
+        }}
+        variant={confirmDialog.variant}
+        confirmText="Delete"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

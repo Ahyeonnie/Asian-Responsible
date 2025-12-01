@@ -11,6 +11,9 @@ import {
   Play,
   PlayCircle,
   Video,
+  ChevronLeft,
+  ChevronRight,
+  X,
 } from "lucide-react";
 import {
   Card,
@@ -21,6 +24,7 @@ import {
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 
 const defaultCommunityStats = [
   {
@@ -45,7 +49,7 @@ const defaultCommunityStats = [
   },
 ];
 
-const featuredProjects = [
+const defaultProjects = [
   {
     id: 1,
     title: "Clean Water for Rural Communities",
@@ -81,7 +85,7 @@ const featuredProjects = [
   },
 ];
 
-const upcomingEvents = [
+const defaultEvents = [
   {
     id: 1,
     title: "Global Climate Action Webinar",
@@ -111,7 +115,7 @@ const upcomingEvents = [
   },
 ];
 
-const featuredVideos = [
+const defaultVideos = [
   {
     id: 1,
     title: "Community Impact Stories",
@@ -158,8 +162,9 @@ const featuredVideos = [
   },
 ];
 
-const testimonials = [
+const defaultTestimonials = [
   {
+    id: 1,
     name: "Maria Santos",
     role: "Community Organizer",
     location: "Brazil",
@@ -168,6 +173,7 @@ const testimonials = [
     avatar: "woman professional brazil",
   },
   {
+    id: 2,
     name: "David Chen",
     role: "Environmental Engineer",
     location: "Singapore",
@@ -176,6 +182,7 @@ const testimonials = [
     avatar: "man engineer asian",
   },
   {
+    id: 3,
     name: "Aisha Patel",
     role: "Social Entrepreneur",
     location: "India",
@@ -185,19 +192,101 @@ const testimonials = [
   },
 ];
 
+// Pagination Component
+function Pagination({ currentPage, totalPages, onPageChange }: {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}) {
+  return (
+    <div className="flex justify-center items-center gap-2 mt-8">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className="disabled:opacity-50"
+      >
+        <ChevronLeft className="w-4 h-4" />
+      </Button>
+      <span className="text-sm text-gray-600 dark:text-gray-300 px-4">
+        Page {currentPage} of {totalPages}
+      </span>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className="disabled:opacity-50"
+      >
+        <ChevronRight className="w-4 h-4" />
+      </Button>
+    </div>
+  );
+}
+
 export default function Community() {
-  // Load community data from localStorage
+  const [theme, setTheme] = useState<string>("colorful");
   const [communityStats, setCommunityStats] = useState(defaultCommunityStats);
-  const [projects, setProjects] = useState(featuredProjects);
-  const [events, setEvents] = useState(upcomingEvents);
+  const [projects, setProjects] = useState(defaultProjects);
+  const [events, setEvents] = useState(defaultEvents);
+  const [videos, setVideos] = useState(defaultVideos);
+  const [testimonials, setTestimonials] = useState(defaultTestimonials);
+
+  // Pagination states
+  const [videosPage, setVideosPage] = useState(1);
+  const [projectsPage, setProjectsPage] = useState(1);
+  const [eventsPage, setEventsPage] = useState(1);
+  const [testimonialsPage, setTestimonialsPage] = useState(1);
+  const [showAllVideos, setShowAllVideos] = useState(false);
+
+  // Video modal state
+  const [selectedVideo, setSelectedVideo] = useState<any>(null);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+
+  const itemsPerPage = 6;
 
   useEffect(() => {
+    loadData();
+    
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'communityData') {
+        loadData();
+      }
+    };
+
+    const handleCustomEvent = () => {
+      loadData();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('storage', handleCustomEvent);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('storage', handleCustomEvent);
+    };
+  }, []);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('siteTheme') || 'colorful';
+    setTheme(savedTheme);
+
+    const handleThemeChange = () => {
+      const newTheme = localStorage.getItem('siteTheme') || 'colorful';
+      setTheme(newTheme);
+    };
+
+    window.addEventListener('storage', handleThemeChange);
+    return () => window.removeEventListener('storage', handleThemeChange);
+  }, []);
+
+  const loadData = () => {
     const saved = localStorage.getItem('communityData');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (parsed.stats && Array.isArray(parsed.stats)) {
-          // Restore icon JSX elements
           const statsWithIcons = parsed.stats.map((stat: any, index: number) => ({
             ...stat,
             icon: defaultCommunityStats[index]?.icon || <Users className="w-6 h-6" />
@@ -210,11 +299,91 @@ export default function Community() {
         if (parsed.events && Array.isArray(parsed.events)) {
           setEvents(parsed.events);
         }
+        if (parsed.videos && Array.isArray(parsed.videos)) {
+          setVideos(parsed.videos);
+        }
+        if (parsed.testimonials && Array.isArray(parsed.testimonials)) {
+          setTestimonials(parsed.testimonials);
+        }
       } catch (error) {
         console.error('Error loading community data:', error);
       }
     }
-  }, []);
+  };
+
+  // Get paginated items
+  const getPaginatedItems = (items: any[], page: number) => {
+    const startIndex = (page - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return items.slice(startIndex, endIndex);
+  };
+
+  const getTotalPages = (items: any[]) => Math.ceil(items.length / itemsPerPage);
+
+  // Separate featured and non-featured videos
+  const featuredVideos = videos.filter(v => v.featured);
+  const regularVideos = videos.filter(v => !v.featured);
+  
+  // Display videos based on showAllVideos state
+  const displayedVideos = showAllVideos 
+    ? getPaginatedItems(regularVideos, videosPage)
+    : regularVideos.slice(0, 3);
+
+  const paginatedProjects = getPaginatedItems(projects, projectsPage);
+  const paginatedEvents = getPaginatedItems(events, eventsPage);
+  const paginatedTestimonials = getPaginatedItems(testimonials, testimonialsPage);
+
+  // Theme-based styling
+  const getThemeColors = () => {
+    if (theme === "corporate") {
+      return {
+        gradient: "from-blue-900 via-blue-800 to-slate-800",
+        cardBg: "bg-white dark:bg-slate-800",
+        textPrimary: "text-slate-900 dark:text-white",
+        textSecondary: "text-slate-600 dark:text-slate-300",
+        accentGradient: "from-blue-600 to-blue-800",
+        badgeBg: "bg-blue-600",
+        hoverShadow: "hover:shadow-blue-200/50 dark:hover:shadow-blue-900/50",
+      };
+    }
+    return {
+      gradient: "from-purple-600 via-pink-600 to-blue-600",
+      cardBg: "bg-white/80 backdrop-blur-sm",
+      textPrimary: "text-gray-900 dark:text-white",
+      textSecondary: "text-gray-600 dark:text-gray-300",
+      accentGradient: "from-purple-500 via-pink-500 to-blue-500",
+      badgeBg: "bg-gradient-to-r from-purple-500 to-pink-500",
+      hoverShadow: "hover:shadow-purple-200/50 dark:hover:shadow-purple-900/50",
+    };
+  };
+
+  const colors = getThemeColors();
+
+  // Handle video click
+  const handleVideoClick = (video: any) => {
+    setSelectedVideo(video);
+    setIsVideoModalOpen(true);
+  };
+
+  // Helper function to get YouTube embed URL
+  const getYouTubeEmbedUrl = (url: string) => {
+    if (!url) return null;
+    
+    // Extract video ID from various YouTube URL formats
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/,
+      /youtube\.com\/embed\/([^&\n?#]+)/,
+    ];
+    
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match) {
+        return `https://www.youtube.com/embed/${match[1]}`;
+      }
+    }
+    
+    return url;
+  };
 
   return (
     <div className="min-h-screen py-20">
@@ -226,10 +395,10 @@ export default function Community() {
           transition={{ duration: 0.8 }}
           className="text-center mb-16"
         >
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
+          <h1 className={`text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r ${colors.gradient} bg-clip-text text-transparent`}>
             Our Community
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto dark:text-white mb-8">
+          <p className={`text-xl ${colors.textSecondary} max-w-3xl mx-auto mb-8`}>
             Join a global network of changemakers, innovators,
             and advocates working together to achieve the
             Sustainable Development Goals.
@@ -247,15 +416,15 @@ export default function Community() {
             <motion.div
               key={index}
               whileHover={{ scale: 1.05, y: -5 }}
-              className="bg-white/80 backdrop-blur-sm rounded-xl p-6 text-center shadow-lg border border-white/20"
+              className={`${colors.cardBg} rounded-xl p-6 text-center shadow-lg border border-white/20 ${colors.hoverShadow} transition-all duration-300`}
             >
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4 text-white">
+              <div className={`w-12 h-12 bg-gradient-to-br ${colors.accentGradient} rounded-full flex items-center justify-center mx-auto mb-4 text-white`}>
                 {stat.icon}
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-1">
+              <h3 className={`text-2xl font-bold ${colors.textPrimary} mb-1`}>
                 {stat.value}
               </h3>
-              <p className="text-gray-600 text-sm">
+              <p className={`${colors.textSecondary} text-sm`}>
                 {stat.label}
               </p>
             </motion.div>
@@ -274,7 +443,7 @@ export default function Community() {
             alt="Diverse community collaboration"
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-600/80 via-pink-600/60 to-blue-600/80 flex items-center justify-center">
+          <div className={`absolute inset-0 bg-gradient-to-r ${colors.gradient} opacity-80 flex items-center justify-center`}>
             <div className="text-center text-white">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
                 Join the Movement
@@ -297,29 +466,33 @@ export default function Community() {
           className="mb-16"
         >
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
+            <h2 className={`text-3xl md:text-4xl font-bold mb-6 bg-gradient-to-r ${colors.gradient} bg-clip-text text-transparent`}>
               Community in Action
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+            <p className={`text-xl ${colors.textSecondary} max-w-3xl mx-auto`}>
               Watch inspiring stories and educational content
               from our global community of changemakers.
             </p>
           </div>
 
           {/* Featured Video */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="mb-12"
-          >
-            {featuredVideos
-              .filter((video) => video.featured)
-              .map((video) => (
+          {featuredVideos.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+              className="mb-12"
+            >
+              {featuredVideos.map((video) => (
                 <div key={video.id} className="relative group">
-                  <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+                  <div 
+                    className="relative rounded-2xl overflow-hidden shadow-2xl cursor-pointer"
+                    onClick={() => handleVideoClick(video)}
+                  >
                     <ImageWithFallback
-                      src={`https://images.unsplash.com/1200x600?${video.thumbnail}`}
+                      src={video.thumbnail.startsWith('data:') || video.thumbnail.startsWith('http') 
+                        ? video.thumbnail 
+                        : `https://images.unsplash.com/1200x600?${video.thumbnail}`}
                       alt={video.title}
                       className="w-full h-64 md:h-96 object-cover"
                     />
@@ -332,14 +505,14 @@ export default function Community() {
                       whileTap={{ scale: 0.95 }}
                     >
                       <div className="bg-white/90 backdrop-blur-sm rounded-full p-6 shadow-2xl cursor-pointer group-hover:bg-white transition-all duration-300">
-                        <PlayCircle className="w-16 h-16 text-purple-600 group-hover:text-purple-700" />
+                        <PlayCircle className={`w-16 h-16 ${theme === 'corporate' ? 'text-blue-600' : 'text-purple-600'} group-hover:${theme === 'corporate' ? 'text-blue-700' : 'text-purple-700'}`} />
                       </div>
                     </motion.div>
 
                     {/* Video Info Overlay */}
                     <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
                       <div className="flex items-center gap-3 mb-4">
-                        <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none">
+                        <Badge className={`${colors.badgeBg} text-white border-none`}>
                           {video.category}
                         </Badge>
                         <span className="text-white/80 text-sm flex items-center gap-1">
@@ -360,91 +533,114 @@ export default function Community() {
                   </div>
                 </div>
               ))}
-          </motion.div>
+            </motion.div>
+          )}
 
           {/* Video Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredVideos
-              .filter((video) => !video.featured)
-              .map((video, index) => (
-                <motion.div
-                  key={video.id}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.6,
-                    delay: 0.7 + index * 0.1,
-                  }}
-                  whileHover={{ scale: 1.02, y: -5 }}
-                  className="group cursor-pointer"
-                >
-                  <Card className="h-full bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-                    <div className="relative">
-                      <ImageWithFallback
-                        src={`https://images.unsplash.com/400x250?${video.thumbnail}`}
-                        alt={video.title}
-                        className="w-full h-48 object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-all duration-300" />
+          {displayedVideos.length > 0 && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {displayedVideos.map((video, index) => (
+                  <motion.div
+                    key={video.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      duration: 0.6,
+                      delay: 0.7 + index * 0.1,
+                    }}
+                    whileHover={{ scale: 1.02, y: -5 }}
+                    className="group cursor-pointer"
+                    onClick={() => handleVideoClick(video)}
+                  >
+                    <Card className={`h-full ${colors.cardBg} border border-white/20 shadow-lg ${colors.hoverShadow} transition-all duration-300 overflow-hidden`}>
+                      <div className="relative">
+                        <ImageWithFallback
+                          src={video.thumbnail.startsWith('data:') || video.thumbnail.startsWith('http') 
+                            ? video.thumbnail 
+                            : `https://images.unsplash.com/400x250?${video.thumbnail}`}
+                          alt={video.title}
+                          className="w-full h-48 object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-all duration-300" />
 
-                      {/* Play Button */}
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <motion.div
-                          className="bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300"
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <Play className="w-6 h-6 text-purple-600 ml-1" />
-                        </motion.div>
+                        {/* Play Button */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <motion.div
+                            className="bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300"
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            <Play className={`w-6 h-6 ${theme === 'corporate' ? 'text-blue-600' : 'text-purple-600'} ml-1`} />
+                          </motion.div>
+                        </div>
+
+                        {/* Video Duration */}
+                        <div className="absolute bottom-3 right-3">
+                          <Badge className="bg-black/70 text-white border-none text-xs">
+                            {video.duration}
+                          </Badge>
+                        </div>
                       </div>
 
-                      {/* Video Duration */}
-                      <div className="absolute bottom-3 right-3">
-                        <Badge className="bg-black/70 text-white border-none text-xs">
-                          {video.duration}
-                        </Badge>
-                      </div>
-                    </div>
+                      <CardContent className="p-5">
+                        <div className="flex items-center justify-between mb-3">
+                          <Badge
+                            variant="outline"
+                            className={`${theme === 'corporate' ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border-purple-200'}`}
+                          >
+                            {video.category}
+                          </Badge>
+                          <span className={`${colors.textSecondary} text-sm`}>
+                            {video.views} views
+                          </span>
+                        </div>
 
-                    <CardContent className="p-5">
-                      <div className="flex items-center justify-between mb-3">
-                        <Badge
-                          variant="outline"
-                          className="bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border-purple-200"
-                        >
-                          {video.category}
-                        </Badge>
-                        <span className="text-gray-500 text-sm">
-                          {video.views} views
-                        </span>
-                      </div>
+                        <h3 className={`font-bold ${colors.textPrimary} mb-2 group-hover:${theme === 'corporate' ? 'text-blue-600' : 'text-purple-600'} transition-colors duration-200`}>
+                          {video.title}
+                        </h3>
 
-                      <h3 className="font-bold text-gray-900 mb-2 group-hover:text-purple-600 transition-colors duration-200">
-                        {video.title}
-                      </h3>
+                        <p className={`${colors.textSecondary} text-sm leading-relaxed`}>
+                          {video.description}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
 
-                      <p className="text-gray-600 text-sm leading-relaxed">
-                        {video.description}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-          </div>
+              {/* Pagination for Videos when showing all */}
+              {showAllVideos && getTotalPages(regularVideos) > 1 && (
+                <Pagination
+                  currentPage={videosPage}
+                  totalPages={getTotalPages(regularVideos)}
+                  onPageChange={setVideosPage}
+                />
+              )}
+            </>
+          )}
 
           {/* View All Videos Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 1.2 }}
-            className="text-center mt-12"
-          >
-            <Button className="bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 hover:from-purple-600 hover:via-pink-600 hover:to-blue-600 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300">
-              <Video className="w-5 h-5 mr-2" />
-              View All Videos
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
-          </motion.div>
+          {regularVideos.length > 3 && (
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 1.2 }}
+              className="text-center mt-12"
+            >
+              <Button 
+                onClick={() => {
+                  setShowAllVideos(!showAllVideos);
+                  setVideosPage(1);
+                }}
+                className={`bg-gradient-to-r ${colors.accentGradient} text-white px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300`}
+              >
+                <Video className="w-5 h-5 mr-2" />
+                {showAllVideos ? 'Show Less' : 'View All Videos'}
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </motion.div>
+          )}
         </motion.div>
 
         {/* Featured Projects */}
@@ -454,11 +650,11 @@ export default function Community() {
           transition={{ duration: 0.8, delay: 0.6 }}
           className="mb-16"
         >
-          <h2 className="text-3xl font-bold text-center mb-12 text-gray-900 dark:text-white mb-8">
+          <h2 className={`text-3xl font-bold text-center mb-12 ${colors.textPrimary}`}>
             Featured Community Projects
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {projects.map((project, index) => (
+            {paginatedProjects.map((project, index) => (
               <motion.div
                 key={project.id}
                 initial={{ opacity: 0, y: 50 }}
@@ -470,38 +666,38 @@ export default function Community() {
                 whileHover={{ scale: 1.02, y: -5 }}
                 className="group"
               >
-                <Card className="h-full bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300">
+                <Card className={`h-full ${colors.cardBg} border border-white/20 shadow-lg ${colors.hoverShadow} transition-all duration-300`}>
                   <CardHeader>
                     <div className="flex items-center justify-between mb-4">
-                      <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none">
+                      <Badge className={`${colors.badgeBg} text-white border-none`}>
                         SDG {project.sdg}
                       </Badge>
                       <Badge
                         variant="outline"
-                        className="text-xs dark:text-black"
+                        className={colors.textPrimary}
                       >
                         {project.category}
                       </Badge>
                     </div>
-                    <CardTitle className="text-xl group-hover:text-purple-600 transition-colors duration-200 text-[rgba(0,0,0,1)]">
+                    <CardTitle className={`text-xl group-hover:${theme === 'corporate' ? 'text-blue-600' : 'text-purple-600'} transition-colors duration-200 ${colors.textPrimary}`}>
                       {project.title}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-600 mb-4 leading-relaxed">
+                    <p className={`${colors.textSecondary} mb-4 leading-relaxed`}>
                       {project.description}
                     </p>
 
                     <div className="space-y-3 mb-4">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500">
+                        <span className={colors.textSecondary}>
                           Progress
                         </span>
-                        <span className="font-medium dark:text-black mb-8">
+                        <span className={`font-medium ${colors.textPrimary}`}>
                           {project.progress}%
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{
@@ -511,12 +707,12 @@ export default function Community() {
                             duration: 1,
                             delay: 0.5,
                           }}
-                          className="bg-gradient-to-r from-purple-500 to-pink-500 h-2 rounded-full"
+                          className={`bg-gradient-to-r ${colors.accentGradient} h-2 rounded-full`}
                         />
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                    <div className={`flex items-center justify-between text-sm ${colors.textSecondary} mb-4`}>
                       <div className="flex items-center gap-1">
                         <Users className="w-4 h-4" />
                         {project.members} members
@@ -527,7 +723,7 @@ export default function Community() {
                       </div>
                     </div>
 
-                    <Button className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
+                    <Button className={`w-full bg-gradient-to-r ${colors.accentGradient} text-white`}>
                       Join Project
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
@@ -536,6 +732,15 @@ export default function Community() {
               </motion.div>
             ))}
           </div>
+
+          {/* Pagination for Projects */}
+          {getTotalPages(projects) > 1 && (
+            <Pagination
+              currentPage={projectsPage}
+              totalPages={getTotalPages(projects)}
+              onPageChange={setProjectsPage}
+            />
+          )}
         </motion.div>
 
         {/* Upcoming Events */}
@@ -545,11 +750,11 @@ export default function Community() {
           transition={{ duration: 0.8, delay: 0.8 }}
           className="mb-16"
         >
-          <h2 className="text-3xl font-bold text-center mb-12 text-gray-900 dark:text-white mb-8">
+          <h2 className={`text-3xl font-bold text-center mb-12 ${colors.textPrimary}`}>
             Upcoming Events
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {events.map((event, index) => (
+            {paginatedEvents.map((event, index) => (
               <motion.div
                 key={event.id}
                 initial={{ opacity: 0, y: 30 }}
@@ -559,25 +764,25 @@ export default function Community() {
                   delay: index * 0.1,
                 }}
                 whileHover={{ scale: 1.02 }}
-                className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300"
+                className={`${colors.cardBg} rounded-xl p-6 border border-white/20 shadow-lg ${colors.hoverShadow} transition-all duration-300`}
               >
                 <div className="flex items-center justify-between mb-4">
-                  <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white border-none">
+                  <Badge className={`${colors.badgeBg} text-white border-none`}>
                     SDG {event.sdg}
                   </Badge>
                   <Badge
                     variant="outline"
-                    className="text-[rgba(0,0,0,1)]"
+                    className={colors.textPrimary}
                   >
                     {event.type}
                   </Badge>
                 </div>
 
-                <h3 className="text-lg font-bold text-gray-900 mb-3">
+                <h3 className={`text-lg font-bold ${colors.textPrimary} mb-3`}>
                   {event.title}
                 </h3>
 
-                <div className="space-y-2 text-sm text-gray-600 mb-4">
+                <div className={`space-y-2 text-sm ${colors.textSecondary} mb-4`}>
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
                     {new Date(event.date).toLocaleDateString()}
@@ -592,12 +797,21 @@ export default function Community() {
                   </div>
                 </div>
 
-                <Button className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
+                <Button className={`w-full bg-gradient-to-r ${colors.accentGradient} text-white`}>
                   Register Now
                 </Button>
               </motion.div>
             ))}
           </div>
+
+          {/* Pagination for Events */}
+          {getTotalPages(events) > 1 && (
+            <Pagination
+              currentPage={eventsPage}
+              totalPages={getTotalPages(events)}
+              onPageChange={setEventsPage}
+            />
+          )}
         </motion.div>
 
         {/* Testimonials */}
@@ -607,13 +821,13 @@ export default function Community() {
           transition={{ duration: 0.8, delay: 1 }}
           className="mb-16"
         >
-          <h2 className="text-3xl font-bold text-center mb-12 text-gray-900 dark:text-white mb-8">
+          <h2 className={`text-3xl font-bold text-center mb-12 ${colors.textPrimary}`}>
             Community Voices
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
+            {paginatedTestimonials.map((testimonial, index) => (
               <motion.div
-                key={index}
+                key={testimonial.id}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{
@@ -621,32 +835,43 @@ export default function Community() {
                   delay: index * 0.1,
                 }}
                 whileHover={{ scale: 1.02 }}
-                className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300"
+                className={`${colors.cardBg} rounded-xl p-6 border border-white/20 shadow-lg ${colors.hoverShadow} transition-all duration-300`}
               >
                 <div className="flex items-center gap-4 mb-4">
                   <ImageWithFallback
-                    src={`https://images.unsplash.com/100x100?${testimonial.avatar}`}
+                    src={testimonial.avatar.startsWith('data:') || testimonial.avatar.startsWith('http') 
+                      ? testimonial.avatar 
+                      : `https://images.unsplash.com/100x100?${testimonial.avatar}`}
                     alt={testimonial.name}
                     className="w-12 h-12 rounded-full object-cover"
                   />
                   <div>
-                    <h4 className="font-semibold text-gray-900">
+                    <h4 className={`font-semibold ${colors.textPrimary}`}>
                       {testimonial.name}
                     </h4>
-                    <p className="text-sm text-gray-600">
+                    <p className={`text-sm ${colors.textSecondary}`}>
                       {testimonial.role}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className={`text-xs ${colors.textSecondary}`}>
                       {testimonial.location}
                     </p>
                   </div>
                 </div>
-                <p className="text-gray-600 italic leading-relaxed">
+                <p className={`${colors.textSecondary} italic leading-relaxed`}>
                   "{testimonial.message}"
                 </p>
               </motion.div>
             ))}
           </div>
+
+          {/* Pagination for Testimonials */}
+          {getTotalPages(testimonials) > 1 && (
+            <Pagination
+              currentPage={testimonialsPage}
+              totalPages={getTotalPages(testimonials)}
+              onPageChange={setTestimonialsPage}
+            />
+          )}
         </motion.div>
 
         {/* Join CTA */}
@@ -654,7 +879,7 @@ export default function Community() {
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 1.2 }}
-          className="bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 rounded-2xl p-12 text-white text-center"
+          className={`bg-gradient-to-r ${colors.accentGradient} rounded-2xl p-12 text-white text-center`}
         >
           <h2 className="text-3xl font-bold mb-4">
             Ready to Make a Difference?
@@ -666,19 +891,82 @@ export default function Community() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               variant="outline"
-              className="bg-white text-gray-900 hover:bg-gray-100 px-8 py-3 rounded-full"
+              className="bg-white text-gray-900 hover:bg-gray-100 px-8 py-3 rounded-full border-none"
             >
               Join Community
             </Button>
             <Button
               variant="outline"
-              className="bg-white text-gray-900 hover:bg-gray-100 px-8 py-3 rounded-full"
+              className="bg-white text-gray-900 hover:bg-gray-100 px-8 py-3 rounded-full border-none"
             >
               Start a Project
             </Button>
           </div>
         </motion.div>
       </div>
+
+      {/* Video Modal */}
+      <Dialog open={isVideoModalOpen} onOpenChange={setIsVideoModalOpen}>
+        <DialogContent 
+          className="max-w-4xl p-0 overflow-hidden"
+          aria-describedby={selectedVideo ? "video-description" : undefined}
+        >
+          {selectedVideo && (
+            <div className="relative">
+              {/* Video Player or Thumbnail */}
+              {selectedVideo.videoUrl && getYouTubeEmbedUrl(selectedVideo.videoUrl) ? (
+                <iframe
+                  src={getYouTubeEmbedUrl(selectedVideo.videoUrl) || ''}
+                  title={selectedVideo.title}
+                  className="w-full h-96 md:h-[500px]"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : (
+                <div className="relative">
+                  <ImageWithFallback
+                    src={selectedVideo.thumbnail.startsWith('data:') || selectedVideo.thumbnail.startsWith('http') 
+                      ? selectedVideo.thumbnail 
+                      : `https://images.unsplash.com/1200x600?${selectedVideo.thumbnail}`}
+                    alt={selectedVideo.title}
+                    className="w-full h-96 md:h-[500px] object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                    <div className="text-center text-white p-6">
+                      <Video className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                      <p className="text-sm">Video URL not provided</p>
+                    </div>
+                  </div>
+                </div>
+              )
+              } 
+              
+              {/* Video Info */}
+              <div className="p-6 bg-white dark:bg-slate-800">
+                <div className="flex items-center gap-3 mb-4">
+                  <Badge className={`${colors.badgeBg} text-white border-none`}>
+                    {selectedVideo.category}
+                  </Badge>
+                  <span className={`${colors.textSecondary} text-sm flex items-center gap-1`}>
+                    <Video className="w-4 h-4" />
+                    {selectedVideo.duration}
+                  </span>
+                  <span className={`${colors.textSecondary} text-sm`}>
+                    {selectedVideo.views} views
+                  </span>
+                </div>
+                <h2 className={`text-2xl font-bold ${colors.textPrimary} mb-3`}>
+                  {selectedVideo.title}
+                </h2>
+                <p id="video-description" className={`${colors.textSecondary} leading-relaxed`}>
+                  {selectedVideo.description}
+                </p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

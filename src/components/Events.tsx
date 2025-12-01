@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Dialog, DialogContent } from './ui/dialog';
-import { Calendar, ChevronLeft, ChevronRight, X, ZoomIn, Image as ImageIcon } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, X, ZoomIn, Image as ImageIcon, Grid, CalendarDays } from 'lucide-react';
 import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import EventCalendar from './EventCalendar';
 
 interface EventPhoto {
   id: number;
@@ -17,6 +19,11 @@ interface Event {
   title: string;
   description: string;
   photos: EventPhoto[];
+  // Calendar view fields (optional)
+  day?: number;
+  location?: string;
+  category?: string;
+  sdg?: number;
 }
 
 const defaultEventsData: Event[] = [
@@ -125,6 +132,7 @@ export default function Events() {
   const [selectedMonthYear, setSelectedMonthYear] = useState<string>('January 2024');
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
   const [direction, setDirection] = useState<number>(0);
+  const [viewMode, setViewMode] = useState<'gallery' | 'calendar'>('gallery');
 
   // Load events from localStorage or use defaults
   const [eventsData, setEventsData] = useState<Event[]>(defaultEventsData);
@@ -228,108 +236,170 @@ export default function Events() {
             Explore our memorable moments and impactful events throughout the year
           </motion.p>
 
-          {/* Month/Year Selector */}
+          {/* View Mode Toggle */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="flex justify-center"
+            className="flex justify-center mb-6"
           >
-            <div className="inline-flex items-center gap-3 bg-white dark:bg-slate-800 rounded-2xl p-2 shadow-xl border border-gray-200 dark:border-slate-700">
-              <Calendar className="w-5 h-5 text-purple-600 ml-2" />
-              <select
-                value={selectedMonthYear}
-                onChange={(e) => setSelectedMonthYear(e.target.value)}
-                className="bg-transparent text-lg font-semibold text-gray-900 dark:text-white border-0 focus:outline-none focus:ring-0 cursor-pointer pr-8"
+            <div className="inline-flex items-center gap-2 bg-white dark:bg-slate-800 rounded-2xl p-1 shadow-xl border border-gray-200 dark:border-slate-700">
+              <Button
+                variant={viewMode === 'gallery' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('gallery')}
+                className={`gap-2 ${viewMode === 'gallery' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-gray-700 dark:text-gray-300'}`}
               >
-                {monthYearOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
+                <Grid className="w-4 h-4" />
+                Gallery View
+              </Button>
+              <Button
+                variant={viewMode === 'calendar' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('calendar')}
+                className={`gap-2 ${viewMode === 'calendar' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-gray-700 dark:text-gray-300'}`}
+              >
+                <CalendarDays className="w-4 h-4" />
+                Calendar View
+              </Button>
             </div>
           </motion.div>
+
+          {/* Month/Year Selector - Only show in Gallery View */}
+          {viewMode === 'gallery' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="flex justify-center"
+            >
+              <div className="inline-flex items-center gap-3 bg-white dark:bg-slate-800 rounded-2xl p-2 shadow-xl border border-gray-200 dark:border-slate-700">
+                <Calendar className="w-5 h-5 text-purple-600 ml-2" />
+                <select
+                  value={selectedMonthYear}
+                  onChange={(e) => setSelectedMonthYear(e.target.value)}
+                  className="bg-transparent text-lg font-semibold text-gray-900 dark:text-white border-0 focus:outline-none focus:ring-0 cursor-pointer pr-8"
+                >
+                  {monthYearOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </motion.div>
+          )}
         </motion.div>
 
-        {/* Event Info */}
-        <AnimatePresence mode="wait">
+        {/* Conditional rendering based on view mode */}
+        {viewMode === 'calendar' ? (
           <motion.div
-            key={selectedMonthYear}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-8 mb-12 text-white shadow-2xl"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <h2 className="text-3xl font-bold mb-2">{currentEvent.title}</h2>
-                <p className="text-white/90 text-lg mb-4">{currentEvent.description}</p>
-                <div className="flex items-center gap-4">
-                  <Badge className="bg-white/20 text-white border-white/30">
-                    <ImageIcon className="w-3 h-3 mr-1" />
-                    {currentEvent.photos.length} Photos
-                  </Badge>
-                  <Badge className="bg-white/20 text-white border-white/30">
-                    {currentEvent.month} {currentEvent.year}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Photo Grid */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={selectedMonthYear}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
           >
-            {currentEvent.photos.map((photo, index) => (
+            <EventCalendar 
+              events={eventsData.map(event => ({
+                id: event.id,
+                title: event.title,
+                description: event.description,
+                month: event.month.slice(0, 3), // Convert "January" to "Jan"
+                year: event.year.toString(),
+                day: event.day || 15, // Default to 15th if no day specified
+                location: event.location || 'TBA',
+                category: event.category || 'General',
+                sdg: event.sdg || 17,
+                image: event.photos[0]?.url
+              }))}
+              isDark={document.documentElement.classList.contains('dark')}
+              designTheme="playful"
+            />
+          </motion.div>
+        ) : (
+          <>
+            {/* Event Info */}
+            <AnimatePresence mode="wait">
               <motion.div
-                key={photo.id}
-                initial={{ opacity: 0, scale: 0.8, y: 50 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ delay: index * 0.1, duration: 0.5 }}
-                whileHover={{ scale: 1.05, y: -8 }}
-                onClick={() => handlePhotoClick(index)}
-                className="group cursor-pointer relative overflow-hidden rounded-2xl shadow-xl bg-gray-200 dark:bg-slate-700 aspect-square"
+                key={selectedMonthYear}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-8 mb-12 text-white shadow-2xl"
               >
-                <img
-                  src={photo.url}
-                  alt={photo.caption}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                />
-                
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="absolute bottom-0 left-0 right-0 p-6">
-                    <p className="text-white font-semibold text-lg mb-2">{photo.caption}</p>
-                    <div className="flex items-center gap-2 text-white/80 text-sm">
-                      <ZoomIn className="w-4 h-4" />
-                      <span>Click to view</span>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <h2 className="text-3xl font-bold mb-2">{currentEvent.title}</h2>
+                    <p className="text-white/90 text-lg mb-4">{currentEvent.description}</p>
+                    <div className="flex items-center gap-4">
+                      <Badge className="bg-white/20 text-white border-white/30">
+                        <ImageIcon className="w-3 h-3 mr-1" />
+                        {currentEvent.photos.length} Photos
+                      </Badge>
+                      <Badge className="bg-white/20 text-white border-white/30">
+                        {currentEvent.month} {currentEvent.year}
+                      </Badge>
                     </div>
                   </div>
                 </div>
-
-                {/* Photo number badge */}
-                <div className="absolute top-4 right-4 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-full w-10 h-10 flex items-center justify-center font-bold text-gray-900 dark:text-white shadow-lg">
-                  {index + 1}
-                </div>
               </motion.div>
-            ))}
-          </motion.div>
-        </AnimatePresence>
+            </AnimatePresence>
+
+            {/* Photo Grid */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={selectedMonthYear}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.5 }}
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+              >
+                {currentEvent.photos.map((photo, index) => (
+                  <motion.div
+                    key={photo.id}
+                    initial={{ opacity: 0, scale: 0.8, y: 50 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ delay: index * 0.1, duration: 0.5 }}
+                    whileHover={{ scale: 1.05, y: -8 }}
+                    onClick={() => handlePhotoClick(index)}
+                    className="group cursor-pointer relative overflow-hidden rounded-2xl shadow-xl bg-gray-200 dark:bg-slate-700 aspect-square"
+                  >
+                    <img
+                      src={photo.url}
+                      alt={photo.caption}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    
+                    {/* Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="absolute bottom-0 left-0 right-0 p-6">
+                        <p className="text-white font-semibold text-lg mb-2">{photo.caption}</p>
+                        <div className="flex items-center gap-2 text-white/80 text-sm">
+                          <ZoomIn className="w-4 h-4" />
+                          <span>Click to view</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Photo number badge */}
+                    <div className="absolute top-4 right-4 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-full w-10 h-10 flex items-center justify-center font-bold text-gray-900 dark:text-white shadow-lg">
+                      {index + 1}
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </AnimatePresence>
+          </>
+        )}
       </div>
 
       {/* Photo Modal */}
       <Dialog open={selectedPhotoIndex !== null} onOpenChange={() => setSelectedPhotoIndex(null)}>
-        <DialogContent className="max-w-6xl w-full h-[90vh] bg-black/95 border-0 p-0 overflow-hidden">
+        <DialogContent 
+          className="max-w-6xl w-full h-[90vh] bg-black/95 border-0 p-0 overflow-hidden"
+          aria-describedby={selectedPhotoIndex !== null ? "photo-caption" : undefined}
+        >
           <div className="relative w-full h-full flex items-center justify-center">
             {/* Close button */}
             <motion.button
@@ -405,7 +475,7 @@ export default function Events() {
                     transition={{ delay: 0.2 }}
                     className="mt-6 bg-white/10 backdrop-blur-sm rounded-2xl px-8 py-4 text-center"
                   >
-                    <p className="text-white text-xl font-semibold">
+                    <p id="photo-caption" className="text-white text-xl font-semibold">
                       {currentEvent.photos[selectedPhotoIndex].caption}
                     </p>
                   </motion.div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -193,6 +193,9 @@ export default function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) 
           <DialogTitle className="text-center text-2xl bg-gradient-to-r from-yellow-600 to-blue-600 bg-clip-text text-transparent">
             {isSignUp ? 'Create Admin Account' : 'Admin Login'}
           </DialogTitle>
+          <DialogDescription className="text-center text-sm text-gray-500 dark:text-gray-400">
+            {isSignUp ? 'Enter your details to create a new account.' : 'Enter your credentials to access the dashboard.'}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">

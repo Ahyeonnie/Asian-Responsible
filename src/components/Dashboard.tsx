@@ -24,6 +24,7 @@ import DashboardEvents from './dashboard/DashboardEvents';
 import DashboardPublications from './dashboard/DashboardPublications';
 import DashboardCommunity from './dashboard/DashboardCommunity';
 import DashboardContact from './dashboard/DashboardContact';
+import DashboardTheme from './dashboard/DashboardTheme';
 
 interface DashboardProps {
   user: { email: string; name: string };
@@ -41,6 +42,7 @@ const dashboardNavItems = [
   { id: 'publications', label: 'Publications', icon: BookOpen, component: DashboardPublications },
   { id: 'community', label: 'Community', icon: Users, component: DashboardCommunity },
   { id: 'contact', label: 'Contact Us', icon: Mail, component: DashboardContact },
+  { id: 'theme', label: 'Theme', icon: Sun, component: DashboardTheme },
 ];
 
 export default function Dashboard({ user, onLogout, isDark, onToggleTheme }: DashboardProps) {

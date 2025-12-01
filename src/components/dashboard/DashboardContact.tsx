@@ -10,6 +10,7 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
+import { Badge } from "../ui/badge";
 import { Save, Plus, Trash2, Edit, Mail, MapPin, Building2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
