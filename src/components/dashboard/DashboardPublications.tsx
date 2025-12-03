@@ -135,7 +135,7 @@ export default function DashboardPublications() {
         const newPublication = { ...editingPublication, id: Date.now() };
         updatedPublications = [...publications, newPublication];
         toast.success('Publication created successfully!');
-      } else {
+      } else { 
         updatedPublications = publications.map((p) =>
           p.id === editingPublication.id ? editingPublication : p
         );
