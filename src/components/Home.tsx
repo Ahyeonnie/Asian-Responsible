@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { motion } from "motion/react";
 import {
   ChevronDown,
@@ -6,17 +6,58 @@ import {
   Users,
   Globe,
 } from "lucide-react";
-
 import SDGGrid from "./SDGGrid";
 import { Button } from "./ui/button";
+import { api } from "../utils/api";
 
 interface HomeProps {
   onNavigate?: (tab: string) => void;
 }
 
+interface HomeData {
+  heroTitle: string;
+  heroSubtitle: string;
+  statsCovered: string;
+  statsPartners: string;
+  statsInitiatives: string;
+}
+
+const defaultHomeData: HomeData = {
+  heroTitle: "Asian Responsible Enterprise Awards",
+  heroSubtitle: "The RISE of Sustainability Champion - Asia and the Pacific",
+  statsCovered: "17",
+  statsPartners: "12+",
+  statsInitiatives: "1+",
+};
 
 export default function Home({ onNavigate }: HomeProps) {
-   const sdgSectionRef = useRef<HTMLElement>(null);
+  const sdgSectionRef = useRef<HTMLElement>(null);
+  
+  // Load home data from API or use defaults
+  const [homeData, setHomeData] = useState<HomeData>(defaultHomeData);
+  
+  useEffect(() => {
+    loadHomeData();
+  }, []);
+
+  const loadHomeData = async () => {
+    try {
+      const data = await api.getHome();
+      if (data) {
+        setHomeData({ 
+          ...defaultHomeData, 
+          heroTitle: data.heroTitle || defaultHomeData.heroTitle,
+          heroSubtitle: data.heroSubtitle || defaultHomeData.heroSubtitle,
+          statsCovered: data.statsCovered || defaultHomeData.statsCovered,
+          statsPartners: data.statsPartners || defaultHomeData.statsPartners,
+          statsInitiatives: data.statsInitiatives || defaultHomeData.statsInitiatives,
+        });
+      }
+    } catch (error) {
+      console.error('Error loading home data from API:', error);
+      // Use defaults on error
+    }
+  };
 
   const scrollToSDGs = () => {
     sdgSectionRef.current?.scrollIntoView({ 
@@ -24,6 +65,7 @@ export default function Home({ onNavigate }: HomeProps) {
       block: "start"
     });
   };
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -37,7 +79,7 @@ export default function Home({ onNavigate }: HomeProps) {
             transition={{ duration: 0.8 }}
           >
             <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-yellow-500 to-blue-600 bg-clip-text text-transparent">
-              Asian Responsible Enterprise Awards
+              {homeData.heroTitle}
             </h1>
 
             <motion.p
@@ -46,8 +88,7 @@ export default function Home({ onNavigate }: HomeProps) {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="text-xl md:text-2xl text-gray-600 dark:text-white mb-8 max-w-3xl mx-auto"
             >
-              “The RISE of Sustainability Champion - Asia and
-              the Pacific”
+              {homeData.heroSubtitle}
             </motion.p>
 
             <motion.div
@@ -57,17 +98,16 @@ export default function Home({ onNavigate }: HomeProps) {
               className="flex flex-col sm:flex-row gap-4 justify-center items-center"
             >
               <Button
-                onClick={() => onNavigate?.("contact")}
                 size="lg"
+                onClick={() => onNavigate?.("contact")}
                 className="bg-gradient-to-r from-blue-600 to-blue-400 hover:from-blue-700 hover:to-blue-500 text-white px-8 py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 Explore the Goals
               </Button>
-              
               <Button
-                onClick={scrollToSDGs}
                 variant="outline"
                 size="lg"
+                onClick={scrollToSDGs}
                 className="border-2 border-gray-300 hover:border-gray-400 px-8 py-4 rounded-full"
               >
                 Learn More
@@ -83,8 +123,7 @@ export default function Home({ onNavigate }: HomeProps) {
           transition={{ duration: 0.8, delay: 0.8 }}
           className="absolute bottom-16 left-0 right-0 overflow-hidden"
         >
-          <div className="bg-gradient-to-r from-yellow-500/90 to-green-500/90 backdrop-blur-sm py-3 relative"
-          data-component="SDG-Cards">
+          <div className="bg-gradient-to-r from-yellow-500/90 to-green-500/90 backdrop-blur-sm py-3 relative">
             <motion.div
               className="flex whitespace-nowrap"
               animate={{ x: [0, -1200] }}
@@ -211,7 +250,7 @@ export default function Home({ onNavigate }: HomeProps) {
                 <Target className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-3xl font-bold text-gray-900 mb-2">
-                17
+                {homeData.statsCovered}
               </h3>
               <p className="text-gray-600">Global Goals</p>
             </div>
@@ -221,7 +260,7 @@ export default function Home({ onNavigate }: HomeProps) {
                 <Users className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-3xl font-bold text-gray-900 mb-2">
-                193
+                {homeData.statsPartners}
               </h3>
               <p className="text-gray-600">UN Member States</p>
             </div>
@@ -231,7 +270,7 @@ export default function Home({ onNavigate }: HomeProps) {
                 <Globe className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-3xl font-bold text-gray-900 mb-2">
-                2030
+                {homeData.statsInitiatives}
               </h3>
               <p className="text-gray-600">Target Year</p>
             </div>
@@ -240,7 +279,7 @@ export default function Home({ onNavigate }: HomeProps) {
       </section>
 
       {/* SDG Grid Section */}
-      <section ref= {sdgSectionRef} className="py-20">
+      <section ref={sdgSectionRef} className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
@@ -280,20 +319,19 @@ export default function Home({ onNavigate }: HomeProps) {
               Development Goals and create a better world for
               future generations.
             </p>
-            <a>
-              <Button
-                 onClick={() => {
+            <Button
+              size="lg"
+              onClick={() => {
                 onNavigate?.("contact");
+                // Scroll to top after a short delay to allow navigation
                 setTimeout(() => {
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }, 100);
               }}
-                size="lg"
-                className="bg-white text-gray-900 hover:bg-gray-100 px-8 py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                Get Involved
-              </Button>
-            </a>
+              className="bg-white text-gray-900 hover:bg-gray-100 px-8 py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              Get Involved
+            </Button>
           </motion.div>
         </div>
       </section>

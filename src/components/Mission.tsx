@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import {
   Target,
@@ -16,89 +16,24 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
+import { api } from "../utils/api";
 
-const missionPillars = [
-  {
-    icon: <Award className="w-8 h-8" />,
-    title: "Corporate Social Responsibility",
-    description:
-      "Advancing corporate social responsibility and environmental sustainability across Asia and the Pacific by recognizing exemplary leadership in ethical governance.",
-    color: "from-yellow-500 to-yellow-600",
-  },
-  {
-    icon: <Trophy className="w-8 h-8" />,
-    title: "Climate Action Leadership",
-    description:
-      "Celebrating and promoting climate action and green innovation through our awards programs that inspire science-based sustainability strategies.",
-    color: "from-blue-500 to-blue-600",
-  },
-  {
-    icon: <Target className="w-8 h-8" />,
-    title: "Low-Carbon Economy",
-    description:
-      "Catalyzing a low-carbon economy by encouraging businesses and organizations to reduce carbon footprints and align with global sustainability goals.",
-    color: "from-green-500 to-green-600",
-  },
-  {
-    icon: <Shield className="w-8 h-8" />,
-    title: "Ethical Governance",
-    description:
-      "Promoting responsible enterprise practices and ethical governance that harmonize economic growth with planetary stewardship.",
-    color: "from-purple-500 to-purple-600",
-  },
-  {
-    icon: <Lightbulb className="w-8 h-8" />,
-    title: "Green Innovation",
-    description:
-      "Fostering green innovation and science-based strategies that drive meaningful environmental impact and sustainable development.",
-    color: "from-teal-500 to-teal-600",
-  },
-  {
-    icon: <Globe className="w-8 h-8" />,
-    title: "Climate Resilience",
-    description:
-      "Building climate resilience across the Asia-Pacific region by inspiring individuals and organizations to adopt sustainable practices.",
-    color: "from-blue-400 to-green-500",
-  },
-];
+const iconMap: { [key: number]: JSX.Element } = {
+  0: <Award className="w-8 h-8" />,
+  1: <Trophy className="w-8 h-8" />,
+  2: <Target className="w-8 h-8" />,
+  3: <Shield className="w-8 h-8" />,
+  4: <Lightbulb className="w-8 h-8" />,
+  5: <Globe className="w-8 h-8" />,
+};
 
-const objectives = [
-  {
-    icon: <Award className="w-8 h-8" />,
-    title: "Honor Leadership Excellence",
-    description:
-      "To honor businesses, organizations, and individuals demonstrating leadership in corporate social responsibility (CSR), ethical governance, and environmental sustainability through the Climate Neutral Awards.",
-    color: "from-yellow-500 to-yellow-600",
-  },
-  {
-    icon: <Target className="w-8 h-8" />,
-    title: "Drive Climate Action & Advocacy",
-    description:
-      "To drive Awareness and Advocacy for Climate Action and encourage enterprises to adopt science-based sustainability strategies, reduce carbon footprints, and contribute to national and global climate resilience efforts.",
-    color: "from-blue-500 to-blue-600",
-  },
-  {
-    icon: <Trophy className="w-8 h-8" />,
-    title: "Provide Global Exposure",
-    description:
-      "To provide awardees with nationwide and international exposure through high-impact publications, digital media, and an exclusive gala event.",
-    color: "from-green-500 to-green-600",
-  },
-  {
-    icon: <Network className="w-8 h-8" />,
-    title: "Foster Networking Opportunities",
-    description:
-      "To create networking opportunities among sustainable enterprises, industry leaders, government officials, and experts to exchange best practices and innovative solutions.",
-    color: "from-purple-500 to-purple-600",
-  },
-  {
-    icon: <BookOpen className="w-8 h-8" />,
-    title: "Ensure Lasting Recognition",
-    description:
-      "To ensure lasting recognition through the publication of awardees' achievements in a luxury coffee table magazine, reinforcing their commitment to sustainability and inspiring future leaders.",
-    color: "from-teal-500 to-teal-600",
-  },
-];
+const objectiveIconMap: { [key: number]: JSX.Element } = {
+  0: <Award className="w-8 h-8" />,
+  1: <Target className="w-8 h-8" />,
+  2: <Trophy className="w-8 h-8" />,
+  3: <Network className="w-8 h-8" />,
+  4: <BookOpen className="w-8 h-8" />,
+};
 
 const benefitsCategories = [
   { id: "recognition", label: "Recognition & Awards" },
@@ -168,6 +103,55 @@ const benefitsContent = {
 
 export default function Mission() {
   const [activeBenefitCategory, setActiveBenefitCategory] = useState("recognition");
+  const [missionPillars, setMissionPillars] = useState<any[]>([]);
+  const [objectivesData, setObjectivesData] = useState<any[]>([]);
+  const [heroTitle, setHeroTitle] = useState("Our Mission");
+  const [heroSubtitle, setHeroSubtitle] = useState(
+    "We are dedicated to advancing corporate social responsibility and environmental sustainability across Asia and the Pacific by recognizing and celebrating exemplary leadership in ethical governance, climate action, and green innovation."
+  );
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadMissionContent();
+  }, []);
+
+  const loadMissionContent = async () => {
+    try {
+      const data = await api.getMission();
+      if (data && data.content) {
+        setHeroTitle(data.content.heroTitle || "Our Mission");
+        setHeroSubtitle(data.content.heroSubtitle || heroSubtitle);
+        
+        if (data.content.pillars && data.content.pillars.length > 0) {
+          const pillarsWithIcons = data.content.pillars.map((pillar: any, index: number) => ({
+            ...pillar,
+            icon: iconMap[index] || <Award className="w-8 h-8" />
+          }));
+          setMissionPillars(pillarsWithIcons);
+        }
+        
+        if (data.content.objectives && data.content.objectives.length > 0) {
+          const objectivesWithIcons = data.content.objectives.map((obj: any, index: number) => ({
+            ...obj,
+            icon: objectiveIconMap[index] || <Target className="w-8 h-8" />
+          }));
+          setObjectivesData(objectivesWithIcons);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading mission content:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen py-20 flex items-center justify-center">
+        <div className="text-xl text-gray-600">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen py-20">
@@ -180,21 +164,10 @@ export default function Mission() {
           className="text-center mb-20"
         >
           <h1 className="text-4xl md:text-6xl text-black font-bold mb-6 dark:text-white">
-            Our Mission
+            {heroTitle}
           </h1>
           <p className="text-xl text-gray-600 max-w-4xl mx-auto dark:text-white mb-8">
-           We are dedicated to advancing corporate social
-responsibility and environmental sustainability across
-Asia and the Pacific by recognizing and celebrating
-exemplary leadership in ethical governance, climate
-action, and green innovation. Through our awards
-programs, we inspire businesses, organizations, and
-individuals to adopt science-based strategies, reduce
-carbon footprints, and align with global sustainability
-goals. Our mission is to catalyze a low-carbon
-economy, foster climate resilience, and promote
-responsible enterprise practices that harmonize
-economic growth with planetary stewardship.
+            {heroSubtitle}
           </p>
         </motion.div>
 
@@ -272,7 +245,7 @@ impact across Asia and the Pacific.
             Our Objectives
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {objectives.map((objective, index) => (
+            {objectivesData.map((objective, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 50 }}

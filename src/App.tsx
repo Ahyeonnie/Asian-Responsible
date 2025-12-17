@@ -10,6 +10,7 @@ import {
   Star,
 } from "lucide-react";
 import { Button } from "./components/ui/button";
+import { Toaster } from "./components/ui/sonner";
 import logoImage from "figma:asset/52a6961ac67c010b9b64abc7b78abdf19a234eb0.png";
 import Home from "./components/Home";
 import Awards from "./components/Awards";
@@ -17,31 +18,112 @@ import Mission from "./components/Mission";
 import News from "./components/News";
 import Community from "./components/Community";
 import Contact from "./components/Contact";
+import Publications from "./components/Publications";
+import Events from "./components/Events";
+import AuthModal from "./components/AuthModal";
+import Dashboard from "./components/Dashboard";
+import SEO, { seoConfig } from "./components/SEO";
 
 const navItems = [
   { id: "home", label: "Home", component: Home },
   { id: "awards", label: "Awards", component: Awards },
   { id: "mission", label: "Mission", component: Mission },
   { id: "news", label: "News", component: News },
+  { id: "events", label: "Events", component: Events },
+  { id: "publications", label: "Publications", component: Publications },
   { id: "community", label: "Community", component: Community },
   { id: "contact", label: "Contact Us", component: Contact },
 ];
 
-
 export default function App() {
   const [activeTab, setActiveTab] = useState("home");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    // Load the owner's default theme mode preference
+    const defaultMode = localStorage.getItem('defaultThemeMode');
+    return defaultMode === 'dark';
+  });
+  const [designTheme, setDesignTheme] = useState<"playful" | "corporate">("playful");
   const [mousePosition, setMousePosition] = useState({
     x: 0,
     y: 0,
   });
+  const [logoClickCount, setLogoClickCount] = useState(0);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [user, setUser] = useState<{ email: string; name: string } | null>(null);
+  const [showDashboard, setShowDashboard] = useState(false);
 
   const ActiveComponent =
     navItems.find((item) => item.id === activeTab)?.component ||
     Home;
 
-  // Handle theme change
+  // Check for saved user session
+  useEffect(() => {
+    const savedUser = localStorage.getItem('adminUser');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+      setShowDashboard(true);
+    }
+    
+    // Load saved design theme
+    const savedTheme = localStorage.getItem('designTheme');
+    if (savedTheme === 'corporate' || savedTheme === 'playful') {
+      setDesignTheme(savedTheme);
+    }
+    
+    // Hint for admin access (will only show in browser console)
+    console.log('%c🔐 Admin Access Hint', 'color: #fbbf24; font-size: 16px; font-weight: bold;');
+    console.log('%cClick the logo 5 times quickly to access the admin dashboard', 'color: #60a5fa; font-size: 14px;');
+  }, []);
+
+  // Listen for theme changes from dashboard
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedTheme = localStorage.getItem('designTheme');
+      if (savedTheme === 'corporate' || savedTheme === 'playful') {
+        setDesignTheme(savedTheme);
+        console.log(`%c🎨 Design Theme Changed to: ${savedTheme.toUpperCase()}`, `color: ${savedTheme === 'corporate' ? '#1e3a8a' : '#fbbf24'}; font-size: 14px; font-weight: bold;`);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Reset logo click count after 2 seconds
+  useEffect(() => {
+    if (logoClickCount > 0) {
+      const timer = setTimeout(() => setLogoClickCount(0), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [logoClickCount]);
+
+  // Handle logo clicks for hidden admin access
+  const handleLogoClick = () => {
+    const newCount = logoClickCount + 1;
+    setLogoClickCount(newCount);
+    
+    if (newCount === 5) {
+      setShowAuthModal(true);
+      setLogoClickCount(0);
+    }
+  };
+
+  const handleLogin = (userData: { email: string; name: string }) => {
+    console.log('🔓 handleLogin called with:', userData);
+    setUser(userData);
+    localStorage.setItem('adminUser', JSON.stringify(userData));
+    setShowDashboard(true);
+    console.log('✅ Dashboard should now be visible');
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem('adminUser');
+    setShowDashboard(false);
+  };
+
+  // Handle theme change - MUST be before any conditional returns
   useEffect(() => {
     if (isDark) {
       document.documentElement.classList.add("dark");
@@ -50,12 +132,12 @@ export default function App() {
     }
   }, [isDark]);
 
-  // Scroll to top when changing tabs
-    useEffect(() => {
+  // Scroll to top when changing tabs - MUST be before any conditional returns
+  useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [activeTab]);
-  
-  // Track mouse position for fancy effects
+
+  // Track mouse position for fancy effects - MUST be before any conditional returns
   useEffect(() => {
     const updateMousePosition = (e: MouseEvent) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
@@ -74,16 +156,38 @@ export default function App() {
     }
   }, [isDark]);
 
+  // If logged in and showing dashboard, render dashboard
+  if (showDashboard && user) {
+    return (
+      <>
+        <Dashboard 
+          user={user} 
+          onLogout={handleLogout} 
+          isDark={isDark}
+          onToggleTheme={() => setIsDark(!isDark)}
+        />
+        <Toaster />
+      </>
+    );
+  }
+
   return (
       <div
         className={`min-h-screen transition-all duration-500 relative overflow-hidden ${
-          isDark
-            ? "bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800"
-            : "bg-gradient-to-br from-yellow-50 via-blue-50 to-green-50"
+          designTheme === 'corporate'
+            ? isDark
+              ? "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
+              : "bg-gradient-to-br from-gray-50 via-white to-gray-100"
+            : isDark
+              ? "bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800"
+              : "bg-gradient-to-br from-yellow-50 via-blue-50 to-green-50"
         }`}
       >
-        {/* Light mode nature background */}
-        {!isDark && (
+        {/* SEO Component - dynamically updates based on active tab */}
+        <SEO {...(seoConfig[activeTab as keyof typeof seoConfig] || seoConfig.home)} />
+
+        {/* Light mode nature background - ONLY FOR PLAYFUL THEME */}
+        {!isDark && designTheme === 'playful' && (
           <>
             {/* Nature background pattern */}
             <div className="fixed inset-0 pointer-events-none z-0">
@@ -259,7 +363,7 @@ export default function App() {
         )}
 
         {/* Dark mode floating particles */}
-        {isDark && (
+        {isDark && designTheme === 'playful' && (
           <div className="fixed inset-0 overflow-hidden pointer-events-none z-10">
             {[...Array(20)].map((_, i) => (
               <motion.div
@@ -286,7 +390,7 @@ export default function App() {
         )}
   
         {/* Mouse cursor glow effect for dark mode */}
-        {isDark && (
+        {isDark && designTheme === 'playful' && (
           <motion.div
             className="fixed pointer-events-none z-20 mix-blend-difference"
             style={{
@@ -316,39 +420,39 @@ export default function App() {
             stiffness: 100,
           }}
           className={`sticky top-0 z-50 transition-all duration-500 ${
-            isDark
-              ? "bg-slate-900/95 backdrop-blur-xl border-b border-yellow-400/20 shadow-2xl shadow-yellow-400/10"
-              : "bg-white/90 backdrop-blur-xl border-b border-gold/20 shadow-xl"
+            designTheme === 'corporate'
+              ? isDark
+                ? "bg-slate-900/95 backdrop-blur-xl border-b border-gray-700 shadow-lg"
+                : "bg-white/95 backdrop-blur-xl border-b border-gray-200 shadow-md"
+              : isDark
+                ? "bg-slate-900/95 backdrop-blur-xl border-b border-yellow-400/20 shadow-2xl shadow-yellow-400/10"
+                : "bg-white/90 backdrop-blur-xl border-b border-gold/20 shadow-xl"
           }`}
         >
-          {isDark && (
+          {isDark && designTheme === 'playful' && (
             <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/5 via-blue-400/5 to-green-400/5"></div>
           )}
   
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
             <div className="flex justify-between items-center h-20">
-              
+              {/* Enhanced Logo */}
               <motion.div
                 whileHover={{ scale: 1.05, rotate: 1 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex items-center space-x-4 cursor-pointer"
-                onClick={() => {
-                  setActiveTab("home");
-                  setMobileMenuOpen(false);
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  const key = (e as React.KeyboardEvent).key;
-                  if (key === "Enter" || key === " ") {
-                    setActiveTab("home");
-                    setMobileMenuOpen(false);
-                    window.scrollTo({ top: 0, behavior: "smooth" });
-                  }
-                }}
-                aria-label="Go to Home"
+                className="flex items-center space-x-4 cursor-pointer relative"
+                onClick={handleLogoClick}
               >
+                {/* Hidden click counter indicator */}
+                {logoClickCount > 0 && (
+                  <motion.div
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center text-xs text-white z-10"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                  >
+                    {logoClickCount}
+                  </motion.div>
+                )}
                 <motion.div
                   className="relative overflow-hidden"
                   whileHover={{ scale: 1.1 }}
@@ -702,6 +806,16 @@ export default function App() {
             )}
           </div>
         </motion.footer>
+
+        {/* Auth Modal */}
+        <AuthModal 
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          onLogin={handleLogin}
+        />
+
+        {/* Toast Notifications */}
+        <Toaster />
       </div>
   );
 }

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import { Award, Trophy, Star, Medal } from "lucide-react";
 import {
@@ -10,67 +10,86 @@ import {
 import { Badge } from "./ui/badge";
 import climateNeutralAward from 'figma:asset/8d86444612d842f0a62ae183b8e3ede8a1f353dc.png';
 import climateNeutralHeroes from 'figma:asset/978e9bf39355758944f80e53089e3561bd792628.png';
+import { normalizeFromApi, migrateDocuments } from "../utils/objectId";
+import { api } from "../utils/api";
 
+export default function Awards() {
+  const [awards, setAwards] = useState<any[]>([]);
+  const [achievementStats, setAchievementStats] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [featuredAwards, setFeaturedAwards] = useState<any[]>([]);
+  const [loadingFeatured, setLoadingFeatured] = useState(true);
+  
+  useEffect(() => {
+    loadAwards();
+      loadFeaturedAwards();
+  }, []);
 
-interface HomeProps {
-  onNavigate?: (tab: string) => void;
-}
-
-
-
-const awards = [
-  {
-    id: 1,
-    title: "Name of Publication",
-    organizationImage: "Book Image",
-    category: "Climate Action",
-    year: "2025",
-    description:
-      "Outstanding contribution to climate action initiatives and carbon neutrality goals.",
-    icon: <Trophy className="w-6 h-6" />,
-    color: "from-yellow-400 to-yellow-600",
-    sdg: "Month",
-  },
-  {
-    id: 2,
-    title: "Name of Publication",
-    organization: "Book Image",
-    category: "Clean Energy",
-    year: "2025",
-    description:
-      "Revolutionary approach to affordable and clean energy solutions in developing countries.",
-    icon: <Award className="w-6 h-6" />,
-    color: "from-blue-400 to-blue-600",
-    sdg: "Month",
-  },
+  const loadAwards = async () => {
+    try {
+      const data = await api.getAwards();
+      if (data && data.awards && Array.isArray(data.awards) && data.awards.length > 0) {
+        const awardsWithIcons = data.awards.map((award: any) => ({
+          ...award,
+          icon: <Trophy className="w-6 h-6" />
+        }));
+        setAwards(awardsWithIcons);
+      }
+      if (data && data.stats && Array.isArray(data.stats) && data.stats.length > 0) {
+        const statsWithIcons = data.stats.map((stat: any, index: number) => {
+          const icons = [
+            <Trophy className="w-6 h-6" />,
+            <Star className="w-6 h-6" />,
+            <Award className="w-6 h-6" />,
+            <Medal className="w-6 h-6" />
+          ];
+          return {
+            ...stat,
+            icon: icons[index] || <Trophy className="w-6 h-6" />
+          };
+        });
+        setAchievementStats(statsWithIcons);
+      }
+    } catch (error) {
+      console.error('Error loading awards:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const loadFeaturedAwards = async () => {
+  try {
+    const data = await api.getFeaturedAwards();
+    if (Array.isArray(data)) {
+      const normalized = data.map((doc: any) => ({
+        id: doc._id?.toString(),
+        ...doc,
+      }));
+      setFeaturedAwards(normalized);
+    } else {
+      setFeaturedAwards([]);
+    }
+  } catch (err) {
+    console.error("Error loading featured awards:", err);
+    setFeaturedAwards([]);
+  } finally {
+    setLoadingFeatured(false);
+  }
+};
+const colorPalette = [
+  "from-yellow-100 to-yellow-200 border-yellow-300", // Award 1
+  "from-blue-100 to-blue-200 border-blue-300",       // Award 2
+  "from-green-100 to-green-200 border-green-300",    // Award 3
+  "from-purple-100 to-purple-200 border-purple-300"  // Award 4
 ];
 
+  if (loading) {
+    return (
+      <div className="min-h-screen py-20 flex items-center justify-center">
+        <div className="text-xl text-gray-600">Loading...</div>
+      </div>
+    );
+  }
 
-const achievementStats = [
-  {
-    label: "Nominated Individuals",
-    value: "25+",
-    icon: <Trophy className="w-6 h-6" />,
-  },
-  {
-    label: "SDGs Addressed",
-    value: "17",
-    icon: <Star className="w-6 h-6" />,
-  },
-  {
-    label: "Partner Organizations",
-    value: "5+",
-    icon: <Award className="w-6 h-6" />,
-  },
-  {
-    label: "Years of Impact",
-    value: "1",
-    icon: <Medal className="w-6 h-6" />,
-  },
-];
-
-
-export default function Awards({ onNavigate }: HomeProps) {
   return (
     <div className="min-h-screen py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -190,236 +209,170 @@ export default function Awards({ onNavigate }: HomeProps) {
         </div>
       </motion.div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Featured Awards Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.15 }}
-          className="mb-16"
-        >
-          <h2 className="text-3xl font-bold text-center mb-12 bg-gradient-to-r from-yellow-500 to-blue-600 bg-clip-text text-transparent">
-            Featured Awards
-          </h2>
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  {/* Featured Awards Section */}
+  <motion.div
+    initial={{ opacity: 0, y: 50 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.8, delay: 0.15 }}
+    className="mb-16"
+  >
+    <h2 className="text-3xl font-bold text-center mb-12 bg-gradient-to-r from-yellow-500 to-blue-600 bg-clip-text text-transparent">
+      Featured Awards
+    </h2>
 
-          {/* Two Award Placeholders */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* Award 1 */}
-            <motion.div
-              whileHover={{ scale: 1.02, y: -5 }}
-              className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/30"
-            >
-              <div className="flex flex-col lg:flex-row items-center gap-8">
-                {/* Climate Neutral Heroes Award Image */}
-                <div className="w-full lg:w-64 h-48 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-xl border-2 border-yellow-300 flex items-center justify-center group hover:from-yellow-200 hover:to-yellow-300 transition-all duration-300 overflow-hidden">
-                  <motion.img 
-                    src={climateNeutralHeroes} 
-                    alt="Climate Neutral Heroes Award"
-                    className="w-full h-full object-contain p-2 rounded-lg"
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.3 }}
-                  />
-                </div>
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+  {featuredAwards.slice(0, 2).map((award, index) => {
+    const gradient = colorPalette[index % colorPalette.length];
+    return (
+      <motion.div
+        key={award.id}
+        whileHover={{ scale: 1.02, y: -5 }}
+        className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/30"
+      >
+        <div className="flex flex-col lg:flex-row items-center gap-8">
+          {/* Image */}
+          <div
+       className={`w-full lg:w-40 h-[400px] bg-gradient-to-br ${gradient} 
+              rounded-xl border-2 flex items-center justify-center 
+              group transition-all duration-300 overflow-hidden`}
+>
 
-                {/* Award Details */}
-                <div className="flex-1 text-center lg:text-left">
-                  <div className="flex items-center justify-center lg:justify-start gap-2 mb-4">
-                    <Badge className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white">
-                     Heroes Award
-                    </Badge>
-                    <Badge variant="outline">2025</Badge>
-                  </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                    Climate Neutral Heroes Award
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    Outstanding achievement in climate neutrality 
-                    and sustainable development initiatives. This 
-                    prestigious recognition celebrates our leadership 
-                    in advancing climate action, environmental 
-                    stewardship, and the United Nations Sustainable 
-                    Development Goals.
-                  </p>
-                  <div className="flex items-center justify-center lg:justify-start gap-2">
-                    <Star className="w-5 h-5 text-yellow-500" />
-                    <span className="text-gray-700 font-medium">
-                      Presented by Asian Responsible Enterprise Awards
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Award 2 */}
-            <motion.div
-              whileHover={{ scale: 1.02, y: -5 }}
-              className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/30"
-            >
-              <div className="flex flex-col lg:flex-row items-center gap-8">
-                {/* Climate Neutral Awards Image */}
-                <div className="w-full lg:w-64 h-48 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl border-2 border-blue-300 flex items-center justify-center group hover:from-blue-200 hover:to-blue-300 transition-all duration-300 overflow-hidden">
-                  <motion.img 
-                    src={climateNeutralAward} 
-                    alt="Climate Neutral Awards"
-                    className="w-full h-full object-contain p-2 rounded-lg"
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.3 }}
-                  />
-                </div>
-
-                {/* Award Details */}
-                <div className="flex-1 text-center lg:text-left">
-                  <div className="flex items-center justify-center lg:justify-start gap-2 mb-4">
-                    <Badge className="bg-gradient-to-r from-blue-400 to-blue-600 text-white">
-                      Neutral Award
-                    </Badge>
-                    <Badge variant="outline">2025</Badge>
-                  </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                    Climate Neutral Awards
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    Recognized for exceptional commitment to climate neutrality 
-                    and sustainable business practices. This award honors our 
-                    innovative approach to reducing carbon footprint and 
-                    promoting environmental responsibility across all operations.
-                  </p>
-                  <div className="flex items-center justify-center lg:justify-start gap-2">
-                    <Star className="w-5 h-5 text-blue-500" />
-                    <span className="text-gray-700 font-medium">
-                      Presented by Asian Responsible Enterprise Awards
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
+            {award.image ? (
+              <motion.img
+                src={award.image}
+                alt={award.title}
+                className="w-full h-full object-contain p-2 rounded-lg"
+                whileHover={{ scale: 1.05 }}
+                transition={{ duration: 0.3 }}
+              />
+            ) : (
+              <Trophy className="w-12 h-12 text-gray-400" />
+            )}
           </div>
-        </motion.div>
 
-        {/* Achievement Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16"
-        >
-          {achievementStats.map((stat, index) => (
-            <motion.div
-              key={index}
-              whileHover={{ scale: 1.05 }}
-              className="bg-white/80 backdrop-blur-sm rounded-xl p-6 text-center shadow-lg border border-white/20"
-            >
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4 text-white">
-                {stat.icon}
+          {/* Text */}
+          <div className="flex-1 text-center lg:text-left">
+            <div className="flex items-center justify-center lg:justify-start gap-2 mb-4">
+              <Badge className={`bg-gradient-to-r ${gradient} text-white`}>
+                {award.category}
+              </Badge>
+              <Badge variant="outline">{award.year}</Badge>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">{award.title}</h3>
+         <p className="text-gray-600 mb-4 whitespace-pre-line break-words break-all text-justify leading-relaxed">
+  {award.description}
+</p>
+
+
+            <div className="flex items-center justify-center lg:justify-start gap-2">
+              <Star className="w-5 h-5 text-yellow-500" />
+              <span className="text-gray-700 font-medium whitespace-pre-line break-words break-all text-justify leading-relaxed">
+                Presented by {award.organization}
+              </span>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  })}
+</div>
+  </motion.div>
+
+  {/* Achievement Stats */}
+  <motion.div
+    initial={{ opacity: 0, y: 50 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.8, delay: 0.2 }}
+    className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16"
+  >
+    {achievementStats.map((stat, index) => (
+      <motion.div
+        key={index}
+        whileHover={{ scale: 1.05 }}
+        className="bg-white/80 backdrop-blur-sm rounded-xl p-6 text-center shadow-lg border border-white/20"
+      >
+        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4 text-white">
+          {stat.icon}
+        </div>
+        <h3 className="text-2xl font-bold text-gray-900 mb-1">{stat.value}</h3>
+        <p className="text-gray-600 text-sm whitespace-pre-line break-words break-all text-justify leading-relaxed">{stat.label}</p>
+      </motion.div>
+    ))}
+  </motion.div>
+
+  {/* Awards Grid */}
+  <motion.div
+    initial={{ opacity: 0, y: 50 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.8, delay: 0.4 }}
+    className="grid grid-cols-1 md:grid-cols-2 gap-8"
+  >
+    {awards.map((award, index) => (
+      <motion.div
+        key={award.id}
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: index * 0.1 }}
+        whileHover={{ scale: 1.02, y: -5 }}
+        className="group"
+      >
+        <Card className="h-full bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300">
+          <CardHeader>
+            <div className="flex items-center justify-between mb-4">
+              <div
+                className={`w-12 h-12 bg-gradient-to-r ${award.color} rounded-full flex items-center justify-center text-white shadow-lg`}
+              >
+                {award.icon}
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-1">
-                {stat.value}
-              </h3>
-              <p className="text-gray-600 text-sm">
-                {stat.label}
-              </p>
-            </motion.div>
-          ))}
-        </motion.div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-black">
+                  SDG {award.sdg}
+                </Badge>
+                <Badge variant="outline" className="text-black">
+                  {award.year}
+                </Badge>
+              </div>
+            </div>
+            <CardTitle className="text-xl group-hover:text-blue-600 transition-colors duration-200 dark:text-black mb-8">
+              {award.title}
+            </CardTitle>
+            <p className="text-sm text-gray-500 font-medium whitespace-pre-line break-words break-all text-justify leading-relaxed">{award.organization}</p>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-4">
+              <Badge className={`bg-gradient-to-r ${award.color} text-white border-none`}>
+                {award.category}
+              </Badge>
+            </div>
+            <p className="text-gray-600 leading-relaxed whitespace-pre-line break-words break-all text-justify leading-relaxed">{award.description}</p>
+          </CardContent>
+        </Card>
+      </motion.div>
+    ))}
+  </motion.div>
 
-        <h2 className="text-3xl font-bold text-center mb-12 bg-gradient-to-r from-yellow-500 to-blue-600 bg-clip-text text-transparent">
-            Publications
-          </h2>
-        {/* Awards Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="grid grid-cols-1 md:grid-cols-2 gap-8"
-        >
-          {awards.map((award, index) => (
-            <motion.div
-              key={award.id}
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              whileHover={{ scale: 1.02, y: -5 }}
-              className="group"
-            >
-              <Card className="h-full bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300">
-                <CardHeader>
-                  <div className="flex items-center justify-between mb-4">
-                    <div
-                      className={`w-12 h-12 bg-gradient-to-r ${award.color} rounded-full flex items-center justify-center text-white shadow-lg`}
-                    >
-                      {award.icon}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant="outline"
-                        className="text-black"
-                      >
-                        {award.sdg}
-                      </Badge>
-                      <Badge
-                        variant="outline"
-                        className="text-black"
-                      >
-                        {award.year}
-                      </Badge>
-                    </div>
-                  </div>
-                  <CardTitle className="text-xl group-hover:text-blue-600 transition-colors duration-200 dark:text-black mb-8">
-                    {award.title}
-                  </CardTitle>
-                  <div className="flex items-center justify-center w-full">
-                    <div className="w-full lg:w-64 h-48 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl border-2 border-blue-300 flex items-center justify-center group hover:from-blue-200 hover:to-blue-300 transition-all duration-300 overflow-hidden">
-                      <motion.img 
-                        src={award.organizationImage} 
-                        alt={award.title}
-                        className="w-full h-full object-contain p-2 rounded-lg"
-                        whileHover={{ scale: 1.05 }}
-                        transition={{ duration: 0.3 }}
-                      />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="mb-4">
-                    <Badge
-                      className={`bg-gradient-to-r ${award.color} text-white border-none`}
-                    >
-                      {award.category}
-                    </Badge>
-                  </div>
-                  <p className="text-gray-600 leading-relaxed">
-                    {award.description}
-                  </p>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </motion.div>
+  {/* Call to Action */}
+  <motion.div
+    initial={{ opacity: 0, y: 50 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.8, delay: 0.6 }}
+    className="mt-20 text-center bg-gradient-to-r from-blue-600 to-blue-400 rounded-2xl p-8 sm:p-12 text-white"
+  >
+    <h2 className="text-2xl sm:text-3xl font-bold mb-4">Join Our Impact Journey</h2>
+    <p className="text-lg sm:text-xl mb-8 opacity-90">
+      Together, we can achieve more milestones and create lasting change for a sustainable future.
+    </p>
+    <motion.button
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      className="bg-white text-gray-900 px-6 sm:px-8 py-3 sm:py-4 rounded-full font-semibold hover:bg-gray-100 transition-colors duration-200 text-sm sm:text-base"
+    >
+      Partner With Us
+    </motion.button>
+  </motion.div>
+</div>
 
-        {/* Call to Action */}
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          className="mt-20 text-center bg-gradient-to-r from-blue-600 to-blue-400 rounded-2xl p-8 sm:p-12 text-white"
-        >
-          <h2 className="text-2xl sm:text-3xl font-bold mb-4">
-            Join Our Impact Journey
-          </h2>
-          <p className="text-lg sm:text-xl mb-8 opacity-90">
-            Together, we can achieve more milestones and create
-            lasting change for a sustainable future.
-          </p>
-          <motion.button
-            onClick={() => onNavigate?.("contact")}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="bg-white text-gray-900 px-6 sm:px-8 py-3 sm:py-4 rounded-full font-semibold hover:bg-gray-100 transition-colors duration-200 text-sm sm:text-base"
-          >
-            Partner With Us
-          </motion.button>
-        </motion.div>
-      </div>
       
       {/* Second Full-Width Marquee - Bottom */}
       <motion.div
