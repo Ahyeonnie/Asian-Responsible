@@ -224,6 +224,8 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/theme', themeRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/featured-awards', require('./routes/featuredAwards'));
+app.use(express.static('public'));
+
 
 
 
@@ -241,6 +243,11 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+
+// Root route
+app.get('/', (req, res) => {
+  res.send('Backend API is running 🚀');
+});
 // ========================================
 // 404 HANDLER
 // ========================================

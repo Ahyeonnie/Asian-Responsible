@@ -222,7 +222,7 @@ const colorPalette = [
     </h2>
 
   <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-  {featuredAwards.slice(0, 2).map((award, index) => {
+  {featuredAwards.map((award, index) => {
     const gradient = colorPalette[index % colorPalette.length];
     return (
       <motion.div
