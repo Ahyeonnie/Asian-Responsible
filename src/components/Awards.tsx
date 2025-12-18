@@ -242,7 +242,7 @@ const colorPalette = [
               <motion.img
                 src={award.image}
                 alt={award.title}
-                className="w-full h-full object-contain p-2 rounded-lg"
+                className="w-full h-full object-cover p-2 rounded-lg"
                 whileHover={{ scale: 1.05 }}
                 transition={{ duration: 0.3 }}
               />
@@ -260,7 +260,7 @@ const colorPalette = [
               <Badge variant="outline">{award.year}</Badge>
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-3">{award.title}</h3>
-         <p className="text-gray-600 mb-4 whitespace-pre-line break-words break-all text-justify leading-relaxed">
+         <p className="text-gray-600 mb-4 whitespace-pre-line break-words text-justify leading-relaxed">
   {award.description}
 </p>
 
