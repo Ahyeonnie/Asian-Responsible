@@ -221,7 +221,7 @@ const colorPalette = [
       Featured Awards
     </h2>
 
-  <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-stretch">
   {featuredAwards.map((award, index) => {
     const gradient = colorPalette[index % colorPalette.length];
     return (
@@ -230,10 +230,10 @@ const colorPalette = [
         whileHover={{ scale: 1.02, y: -5 }}
         className="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/30"
       >
-        <div className="flex flex-col lg:flex-row items-center gap-8">
+        <div className="flex flex-col lg:flex-row items-start gap-8">
           {/* Image */}
           <div
-       className={`w-full lg:w-40 h-[400px] bg-gradient-to-br ${gradient} 
+       className={`w-full lg:w-40 aspect-[3/4] bg-gradient-to-br ${gradient} 
               rounded-xl border-2 flex items-center justify-center 
               group transition-all duration-300 overflow-hidden`}
 >
@@ -260,7 +260,7 @@ const colorPalette = [
               <Badge variant="outline">{award.year}</Badge>
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-3">{award.title}</h3>
-         <p className="text-gray-600 mb-4 whitespace-pre-line break-words break-all text-justify leading-relaxed">
+         <p className="text-gray-600 mb-4 whitespace-pre-line break-words  text-justify leading-relaxed">
   {award.description}
 </p>
 
