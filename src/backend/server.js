@@ -185,6 +185,8 @@ app.delete('/api/upload/:publicId', async (req, res) => {
 // ========================================
 // MONGODB CONNECTION
 // ========================================
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/sdg-website';
+
 mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -194,7 +196,6 @@ mongoose.connect(MONGODB_URI, {
 .then(() => console.log('✅ MongoDB Connected Successfully (with pooling)'))
 .catch((err) => console.error('❌ MongoDB Connection Error:', err));
 
-// ========================================
 // IMPORT ROUTES
 // ========================================
 const homeRoutes = require('./routes/home');
