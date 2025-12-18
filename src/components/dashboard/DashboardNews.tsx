@@ -243,17 +243,14 @@ const handleSaveArticle = () => {
   }
 };
 
-const handleDeleteArticle = (id: string) => { // ✅ use string for MongoDB ObjectId
-  setConfirmDialog({
-    open: true,
-    title: "Delete Article",
-    description: "Are you sure you want to delete this article?",
-    onConfirm: () => {
-      saveArticles(articles.filter(a => a._id !== id));
-      toast.success("Article deleted successfully!");
-    },
-    variant: "destructive",
-  });
+const handleDeleteArticle = async (id: string) => {
+  try {
+    await api.deleteArticle(id); // <-- call backend DELETE
+    setArticles(articles.filter(a => a._id !== id));
+    toast.success("Article deleted successfully!");
+  } catch (err) {
+    toast.error("Failed to delete article");
+  }
 };
 
 // ✅ Video CRUD operations (still use id: number)
@@ -267,7 +264,7 @@ const handleSaveVideo = () => {
     ];
 
      const missing = requiredFields.filter(
-      f => !editingVideo[f.key as keyof FeaturedVideo]
+      f => !editingVideo[f.key as keyof NewsVideo]
     );
 
     if (missing.length > 0) {
@@ -293,17 +290,14 @@ const handleSaveVideo = () => {
     setEditingVideo(null);
   }
 };
-const handleDeleteVideo = (id: string) => { // ✅ string for MongoDB ObjectId
-  setConfirmDialog({
-    open: true,
-    title: "Delete Video",
-    description: "Are you sure you want to delete this video?",
-    onConfirm: () => {
-      saveVideos(videos.filter(v => v._id !== id));
-      toast.success("Video deleted successfully!");
-    },
-    variant: "destructive",
-  });
+const handleDeleteVideo = async (id: string) => {
+  try {
+    await api.deleteVideo(id); // <-- call backend DELETE
+    setVideos(videos.filter(v => v._id !== id));
+    toast.success("Video deleted successfully!");
+  } catch (err) {
+    toast.error("Failed to delete video");
+  }
 };
 
 // ✅ Featured Story CRUD operations (still use id: number)
@@ -350,17 +344,15 @@ const handleSaveStory = () => {
   }
 };
 
-const handleDeleteStory = (id: string) => {
-  setConfirmDialog({
-    open: true,
-    title: "Delete Featured Story",
-    description: "Are you sure you want to delete this featured story?",
-    onConfirm: () => {
-      saveFeaturedStories(featuredStories.filter(s => s.id !== id));
-      toast.success("Featured story deleted successfully!");
-    },
-    variant: "destructive",
-  });
+
+const handleDeleteStory = async (id: string) => {
+  try {
+    await api.deleteStory(id); // <-- call backend DELETE
+    setFeaturedStories(featuredStories.filter(s => s._id !== id));
+    toast.success("Featured story deleted successfully!");
+  } catch (err) {
+    toast.error("Failed to delete story");
+  }
 };
 
   return (
