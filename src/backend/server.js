@@ -185,13 +185,13 @@ app.delete('/api/upload/:publicId', async (req, res) => {
 // ========================================
 // MONGODB CONNECTION
 // ========================================
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/sdg-website';
-
 mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
+  maxPoolSize: 10,  // limit concurrent sockets
+  minPoolSize: 2    // keep a baseline alive
 })
-.then(() => console.log('✅ MongoDB Connected Successfully'))
+.then(() => console.log('✅ MongoDB Connected Successfully (with pooling)'))
 .catch((err) => console.error('❌ MongoDB Connection Error:', err));
 
 // ========================================
@@ -259,6 +259,13 @@ app.use((req, res, next) => {
   });
 });
 
+
+/*
+setInterval(() => {
+  console.log("Forcing process exit for restart...");
+  process.exit(1); // Render will detect crash and restart
+}, 15 * 60 * 1000);
+*/
 // ========================================
 // ERROR HANDLING MIDDLEWARE
 // ========================================
