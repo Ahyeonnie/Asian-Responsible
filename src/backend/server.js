@@ -9,6 +9,8 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
+const cron = require('node-cron'); 
+const axios = require('axios');
 
 // SECURITY: Import security middleware
 const {
@@ -195,6 +197,17 @@ mongoose.connect(MONGODB_URI, {
 })
 .then(() => console.log('✅ MongoDB Connected Successfully (with pooling)'))
 .catch((err) => console.error('❌ MongoDB Connection Error:', err));
+
+
+// Run every 5 minutes
+cron.schedule('*/5 * * * *', async () => {
+  try {
+    const res = await axios.get('https://asian-responsible.onrender.com/api/health');
+    console.log('Pinged health endpoint:', res.data.status);
+  } catch (err) {
+    console.error('Error pinging health endpoint:', err.message);
+  }
+});
 
 // IMPORT ROUTES
 // ========================================
