@@ -188,7 +188,7 @@ app.delete('/api/upload/:publicId', async (req, res) => {
 mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-  maxPoolSize: 10,  // limit concurrent sockets
+  maxPoolSize: 20,  // limit concurrent sockets
   minPoolSize: 2    // keep a baseline alive
 })
 .then(() => console.log('✅ MongoDB Connected Successfully (with pooling)'))
