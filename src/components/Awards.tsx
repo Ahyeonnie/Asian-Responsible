@@ -260,7 +260,7 @@ const colorPalette = [
               <Badge variant="outline">{award.year}</Badge>
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-3">{award.title}</h3>
-         <p className="text-gray-600 mb-4 whitespace-pre-line break-words  text-justify leading-relaxed">
+         <p className="text-gray-600 mb-4 whitespace-pre-line break-words break-all text-justify leading-relaxed">
   {award.description}
 </p>
 
