@@ -449,7 +449,7 @@ const handleDeleteStory = async (id: string) => {
                             size="sm"
                             variant="outline"
                             className="text-red-500 hover:bg-red-50"
-                            onClick={() => handleDeleteArticle(article.id)}
+                            onClick={() => handleDeleteArticle(article._id)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -674,7 +674,7 @@ const handleDeleteStory = async (id: string) => {
                             size="sm"
                             variant="outline"
                             className="text-red-500 hover:bg-red-50"
-                            onClick={() => handleDeleteVideo(video.id)}
+                            onClick={() => handleDeleteVideo(video._id)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -866,7 +866,7 @@ const handleDeleteStory = async (id: string) => {
                         size="sm"
                         variant="outline"
                         className="text-red-500 hover:bg-red-50"
-                        onClick={() => handleDeleteStory(story.id)}
+                        onClick={() => handleDeleteStory(story._id)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
