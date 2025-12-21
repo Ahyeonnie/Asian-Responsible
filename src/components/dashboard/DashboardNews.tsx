@@ -12,14 +12,14 @@ import { FileUpload } from './FileUpload';
 import { ConfirmDialog } from '../ui/confirm-dialog';
 import { api } from '../../utils/api';
 
-
 // Interfaces
 interface NewsArticle {
   _id?: string;
   title: string;
   description: string;
   excerpt: string;
-  image: string;
+  image: string | File;
+  cloudinaryId?: string;
   date: string;
   category: string;
   author: string;
@@ -32,8 +32,9 @@ interface NewsVideo {
   _id?: string;
   title: string;
   description: string;
-  thumbnail: string;
+  thumbnail: string | File;
   duration: string;
+  cloudinaryId?: string;
   views: string;
   date: string;
   videoUrl: string;
@@ -47,15 +48,26 @@ interface FeaturedStory {
   date: string;
   readTime: string;
   category: string;
+  cloudinaryId?: string;
   sdg: number;
   featured: boolean;
-  image: string;
+  image: string | File;
   useCustomImage: boolean;
   link?: string;
 }
 
 function normalizeDate(date: string | Date): string {
   return new Date(date).toISOString().split("T")[0];
+}
+
+// Shared upload helper
+async function uploadIfFile(fileOrUrl: string | File, type: "image" | "thumbnail") {
+  if (fileOrUrl instanceof File) {
+    return type === "image"
+      ? await api.uploadImage(fileOrUrl)
+      : await api.uploadThumbnail(fileOrUrl);
+  }
+  return { imageUrl: fileOrUrl, thumbnailUrl: fileOrUrl, publicId: undefined };
 }
 
 export default function DashboardNews() {
@@ -91,7 +103,7 @@ export default function DashboardNews() {
     try {
       const data = await api.getNews();
       setArticles(data?.articles || []);
-    } catch (error) {
+    } catch {
       toast.error('Failed to load news articles.');
       setArticles([]);
     }
@@ -101,7 +113,7 @@ export default function DashboardNews() {
     try {
       const data = await api.getNews();
       setVideos(data?.videos || []);
-    } catch (error) {
+    } catch {
       toast.error('Failed to load videos.');
       setVideos([]);
     }
@@ -111,57 +123,59 @@ export default function DashboardNews() {
     try {
       const data = await api.getNews();
       setFeaturedStories(data?.stories || []);
-    } catch (error) {
+    } catch {
       toast.error('Failed to load featured stories.');
       setFeaturedStories([]);
     }
   };
 
   // ✅ Article CRUD
- const handleSaveArticle = async () => {
-  if (!editingArticle) return;
+  const handleSaveArticle = async () => {
+    if (!editingArticle) return;
 
-  const requiredFields = ["title","excerpt","author","date","image","category"];
-  const missing = requiredFields.filter(f => !editingArticle[f as keyof NewsArticle]);
-  if (missing.length > 0) {
-    toast.error(`Missing fields: ${missing.join(", ")}`);
-    return;
-  }
-
-  setConfirmDialog({
-    open: true,
-    title: editingArticle._id ? "Update Article" : "Create Article",
-    description: editingArticle._id
-      ? "Are you sure you want to update this article?"
-      : "Are you sure you want to create this article?",
-    onConfirm: async () => {
-      try {
-        let imageUrl = editingArticle.image;
-        let cloudinaryId = editingArticle.cloudinaryId;
-
-        if (editingArticle.image instanceof File) {
-          const uploadRes = await api.uploadImage(editingArticle.image);
-          imageUrl = uploadRes.imageUrl;
-          cloudinaryId = uploadRes.publicId;   // ✅ include publicId
-        }
-
-        if (!editingArticle._id) {
-          const saved = await api.createArticle({ ...editingArticle, image: imageUrl, cloudinaryId });
-          setArticles([...articles, saved.data]);
-          toast.success("Article created successfully!");
-        } else {
-          const updated = await api.updateArticle(editingArticle._id, { ...editingArticle, image: imageUrl, cloudinaryId });
-          setArticles(articles.map(a => a._id === editingArticle._id ? updated.data : a));
-          toast.success("Article updated successfully!");
-        }
-        setEditingArticle(null);
-      } catch (err: any) {
-        toast.error(err.message || "Failed to save article");
-      }
+    const requiredFields = ["title","excerpt","author","date","image","category"];
+    const missing = requiredFields.filter(f => !editingArticle[f as keyof NewsArticle]);
+    if (missing.length > 0) {
+      toast.error(`Missing fields: ${missing.join(", ")}`);
+      return;
     }
-  });
-};
 
+    setConfirmDialog({
+      open: true,
+      title: editingArticle._id ? "Update Article" : "Create Article",
+      description: editingArticle._id
+        ? "Are you sure you want to update this article?"
+        : "Are you sure you want to create this article?",
+      onConfirm: async () => {
+        try {
+          let imageUrl = typeof editingArticle.image === "string" ? editingArticle.image : "";
+          let cloudinaryId = editingArticle.cloudinaryId;
+
+          if (editingArticle.image instanceof File) {
+            const uploadRes = await api.uploadImage(editingArticle.image);
+            imageUrl = uploadRes.imageUrl;
+            cloudinaryId = uploadRes.publicId;
+          }
+
+          const payload = { ...editingArticle, image: imageUrl, cloudinaryId };
+
+          if (!editingArticle._id) {
+            const saved = await api.createArticle(payload);
+            setArticles([...articles, saved.data]);
+            toast.success("Article created successfully!");
+          } else {
+            const updated = await api.updateArticle(editingArticle._id, payload);
+            setArticles(articles.map(a => a._id === editingArticle._id ? updated.data : a));
+            toast.success("Article updated successfully!");
+          }
+          setEditingArticle(null);
+        } catch (err: any) {
+          console.error(err);
+          toast.error(err.message || "Failed to save article");
+        }
+      }
+    });
+  };
 
   const handleDeleteArticle = async (id: string) => {
     try {
@@ -174,41 +188,43 @@ export default function DashboardNews() {
   };
 
   // ✅ Video CRUD
- const handleSaveVideo = async () => {
-  if (!editingVideo) return;
+  const handleSaveVideo = async () => {
+    if (!editingVideo) return;
 
-  const requiredFields = ["title","description","date","thumbnail"];
-  const missing = requiredFields.filter(f => !editingVideo[f as keyof NewsVideo]);
-  if (missing.length > 0) {
-    toast.error(`Missing fields: ${missing.join(", ")}`);
-    return;
-  }
-
-  try {
-    let thumbUrl = editingVideo.thumbnail;
-    let cloudinaryId = editingVideo.cloudinaryId;
-
-    if (editingVideo.thumbnail instanceof File) {
-      const uploadRes = await api.uploadThumbnail(editingVideo.thumbnail);
-      thumbUrl = uploadRes.thumbnailUrl;
-      cloudinaryId = uploadRes.publicId;   // ✅ include publicId
+    const requiredFields = ["title","description","date","thumbnail"];
+    const missing = requiredFields.filter(f => !editingVideo[f as keyof NewsVideo]);
+    if (missing.length > 0) {
+      toast.error(`Missing fields: ${missing.join(", ")}`);
+      return;
     }
 
-    if (!editingVideo._id) {
-      const saved = await api.createVideo({ ...editingVideo, thumbnail: thumbUrl, cloudinaryId });
-      setVideos([...videos, saved.data]);
-      toast.success("Video created successfully!");
-    } else {
-      const updated = await api.updateVideo(editingVideo._id, { ...editingVideo, thumbnail: thumbUrl, cloudinaryId });
-      setVideos(videos.map(v => v._id === editingVideo._id ? updated.data : v));
-      toast.success("Video updated successfully!");
-    }
-    setEditingVideo(null);
-  } catch (err: any) {
-    toast.error(err.message || "Failed to save video");
-  }
-};
+    try {
+      let thumbUrl = typeof editingVideo.thumbnail === "string" ? editingVideo.thumbnail : "";
+      let cloudinaryId = editingVideo.cloudinaryId;
 
+      if (editingVideo.thumbnail instanceof File) {
+        const uploadRes = await api.uploadThumbnail(editingVideo.thumbnail);
+        thumbUrl = uploadRes.thumbnailUrl;
+        cloudinaryId = uploadRes.publicId;
+      }
+
+      const payload = { ...editingVideo, thumbnail: thumbUrl, cloudinaryId };
+
+      if (!editingVideo._id) {
+        const saved = await api.createVideo(payload);
+        setVideos([...videos, saved.data]);
+        toast.success("Video created successfully!");
+      } else {
+        const updated = await api.updateVideo(editingVideo._id, payload);
+        setVideos(videos.map(v => v._id === editingVideo._id ? updated.data : v));
+        toast.success("Video updated successfully!");
+      }
+      setEditingVideo(null);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Failed to save video");
+    }
+  };
 
   const handleDeleteVideo = async (id: string) => {
     try {
@@ -222,40 +238,43 @@ export default function DashboardNews() {
 
   // ✅ Story CRUD
   const handleSaveStory = async () => {
-  if (!editingStory) return;
+    if (!editingStory) return;
 
-  const requiredFields = ["title","excerpt","date","readTime","category","image","sdg"];
-  const missing = requiredFields.filter(f => !editingStory[f as keyof FeaturedStory]);
-  if (missing.length > 0) {
-    toast.error(`Missing fields: ${missing.join(", ")}`);
-    return;
-  }
-
-  try {
-    let imageUrl = editingStory.image;
-    let cloudinaryId = editingStory.cloudinaryId;
-
-    if (editingStory.image instanceof File) {
-      const uploadRes = await api.uploadImage(editingStory.image);
-      imageUrl = uploadRes.imageUrl;
-      cloudinaryId = uploadRes.publicId;   // ✅ include publicId
+    const requiredFields = ["title","excerpt","date","readTime","category","image","sdg"];
+    const missing = requiredFields.filter(f => !editingStory[f as keyof FeaturedStory]);
+    if (missing.length > 0) {
+      toast.error(`Missing fields: ${missing.join(", ")}`);
+      return;
     }
 
-    if (!editingStory._id) {
-      const saved = await api.createStory({ ...editingStory, image: imageUrl, cloudinaryId });
-      setFeaturedStories([...featuredStories, saved.data]);
-      toast.success("Story created successfully!");
-    } else {
-      const updated = await api.updateStory(editingStory._id, { ...editingStory, image: imageUrl, cloudinaryId });
-      setFeaturedStories(featuredStories.map(s => s._id === editingStory._id ? updated.data : s));
-      toast.success("Story updated successfully!");
-    }
-    setEditingStory(null);
-  } catch (err: any) {
-    toast.error(err.message || "Failed to save story");
-  }
-};
+    try {
+      let imageUrl = typeof editingStory.image === "string" ? editingStory.image : "";
+      let cloudinaryId = editingStory.cloudinaryId;
 
+      if (editingStory.image instanceof File) {
+        const uploadRes = await api.uploadImage(editingStory.image);
+        imageUrl = uploadRes.imageUrl;
+        cloudinaryId = uploadRes.publicId;
+      }
+
+      const payload = { ...editingStory, image: imageUrl, cloudinaryId };
+
+      if (!editingStory._id) {
+        const saved = await api.createStory(payload);
+        setFeaturedStories([...featuredStories, saved.data]);
+        toast.success("Story created successfully!");
+      } else {
+        const updated = await api.updateStory(editingStory._id, payload);
+        setFeaturedStories(featuredStories.map(s => s._id === editingStory._id ? updated.data : s));
+        toast.success("Story updated successfully!");
+      }
+
+      setEditingStory(null);   // ✅ moved inside try block correctly
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Failed to save story");
+    }
+  };
 
   const handleDeleteStory = async (id: string) => {
     try {
@@ -265,6 +284,8 @@ export default function DashboardNews() {
     } catch {
       toast.error("Failed to delete story");
     }
+  };
+
   
   return (
     <div className="space-y-6">
@@ -321,7 +342,7 @@ export default function DashboardNews() {
 
           <div className="grid gap-4">
             {articles.map((article) => (
-              <Card key={article.id} className={article.featured ? "border-yellow-400 border-2" : ""}>
+              <Card key={article._id} className={article.featured ? "border-yellow-400 border-2" : ""}>
                 <CardContent className="p-6">
                   <div className="flex gap-4">
                     {article.image && (
@@ -376,7 +397,7 @@ export default function DashboardNews() {
           {editingArticle && (
             <Card className="border-2 border-blue-500 mt-6">
               <CardHeader>
-                <CardTitle>{editingArticle.id === 0 ? 'New Article' : 'Edit Article'}</CardTitle>
+                <CardTitle>{!editingArticle._id ? 'New Article' : 'Edit Article'}</CardTitle>
                 <CardDescription>Create engaging in-depth articles for your readers</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -458,47 +479,54 @@ export default function DashboardNews() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Featured Image *</Label>
-                  <div className="flex gap-2 items-center mb-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={editingArticle.image && !editingArticle.image.startsWith('data:') ? "default" : "outline"}
-                      onClick={() => {
-                        const useUrl = editingArticle.image && editingArticle.image.startsWith('data:');
-                        if (useUrl) {
-                          setEditingArticle({ ...editingArticle, image: '' });
-                        }
-                      }}
-                    >
-                      <LinkIcon className="h-4 w-4 mr-2" />
-                      {editingArticle.image && !editingArticle.image.startsWith('data:') ? 'Using URL' : 'Use URL Instead'}
-                    </Button>
-                  </div>
-                  
-                  {editingArticle.image && !editingArticle.image.startsWith('data:') ? (
-                    <div className="space-y-2">
-                      <Input
-                        value={editingArticle.image}
-                        onChange={(e) => setEditingArticle({ ...editingArticle, image: e.target.value })}
-                        placeholder="https://images.unsplash.com/..."
-                      />
-                      {editingArticle.image && (
-                        <img src={editingArticle.image} alt="Preview" className="w-full h-48 object-cover rounded" />
-                      )}
-                    </div>
-                  ) : (
-                    <FileUpload
-  accept="image/*"
-  maxSize={5}
-  currentFile={editingArticle.image}
-  onUpload={(file) => setEditingArticle({ ...editingArticle, image: file })} // ✅ store File, not base64
-  type="image"
-  label="Upload Article Image"
-                    />
-                  )}
-                </div>
+           <div className="space-y-2">
+  <Label>Featured Image *</Label>
+  <div className="flex gap-2 items-center mb-2">
+    <Button
+      type="button"
+      size="sm"
+      variant={typeof editingArticle.image === "string" ? "default" : "outline"}
+      onClick={() => {
+        if (editingArticle.image instanceof File) {
+          setEditingArticle({ ...editingArticle, image: '' });
+        }
+      }}
+    >
+      <LinkIcon className="h-4 w-4 mr-2" />
+      {typeof editingArticle.image === "string" ? 'Using URL' : 'Use URL Instead'}
+    </Button>
+  </div>
+
+  {typeof editingArticle.image === "string" ? (
+    <div className="space-y-2">
+      <Input
+        value={editingArticle.image}
+        onChange={(e) => setEditingArticle({ ...editingArticle, image: e.target.value })}
+        placeholder="https://images.unsplash.com/..."
+      />
+      {editingArticle.image && (
+        <img src={editingArticle.image} alt="Preview" className="w-full h-48 object-cover rounded" />
+      )}
+    </div>
+  ) : (
+    <FileUpload
+      accept="image/*"
+      maxSize={5}
+      currentFile={editingArticle.image}
+      onUpload={(file) => setEditingArticle({ ...editingArticle, image: file })}
+      type="image"
+      label="Upload Article Image"
+    />
+  )}
+
+  {editingArticle.image instanceof File && (
+    <img
+      src={URL.createObjectURL(editingArticle.image)}
+      alt="Preview"
+      className="w-full h-48 object-cover rounded mt-2"
+    />
+  )}
+</div>
 
                 <div className="space-y-2">
                   <Label>External Link (optional)</Label>
@@ -549,7 +577,8 @@ export default function DashboardNews() {
 
           <div className="grid gap-4">
             {videos.map((video) => (
-              <Card key={video.id}>
+         <Card key={video._id}>
+
                 <CardContent className="p-6">
                   <div className="flex gap-4">
                     {video.thumbnail && (
@@ -601,7 +630,8 @@ export default function DashboardNews() {
           {editingVideo && (
             <Card className="border-2 border-blue-500 mt-6">
               <CardHeader>
-                <CardTitle>{editingVideo.id === 0 ? 'New Video' : 'Edit Video'}</CardTitle>
+            <CardTitle>{!editingVideo._id ? 'New Video' : 'Edit Video'}</CardTitle>
+
                 <CardDescription>Add featured videos to showcase your work</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -653,48 +683,55 @@ export default function DashboardNews() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Thumbnail Image *</Label>
-                  <div className="flex gap-2 items-center mb-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={editingVideo.thumbnail && !editingVideo.thumbnail.startsWith('data:') ? "default" : "outline"}
-                      onClick={() => {
-                        const useUrl = editingVideo.thumbnail && editingVideo.thumbnail.startsWith('data:');
-                        if (useUrl) {
-                          setEditingVideo({ ...editingVideo, thumbnail: '' });
-                        }
-                      }}
-                    >
-                      <LinkIcon className="h-4 w-4 mr-2" />
-                      {editingVideo.thumbnail && !editingVideo.thumbnail.startsWith('data:') ? 'Using URL' : 'Use URL Instead'}
-                    </Button>
-                  </div>
-                  
-                  {editingVideo.thumbnail && !editingVideo.thumbnail.startsWith('data:') ? (
-                    <div className="space-y-2">
-                      <Input
-                        value={editingVideo.thumbnail}
-                        onChange={(e) => setEditingVideo({ ...editingVideo, thumbnail: e.target.value })}
-                        placeholder="https://images.unsplash.com/..."
-                      />
-                      {editingVideo.thumbnail && (
-                        <img src={editingVideo.thumbnail} alt="Preview" className="w-full h-48 object-cover rounded" />
-                      )}
-                    </div>
-                  ) : (
-                  <FileUpload
-  accept="image/*"
-  maxSize={5}
-  currentFile={editingVideo.thumbnail}
-  onUpload={(file) => setEditingVideo({ ...editingVideo, thumbnail: file })} // ✅ store File, not base64
-  type="image"
-  label="Upload Video Thumbnail"
-/>
+              <div className="space-y-2">
+  <Label>Thumbnail Image *</Label>
+  <div className="flex gap-2 items-center mb-2">
+    <Button
+      type="button"
+      size="sm"
+      variant={typeof editingVideo.thumbnail === "string" ? "default" : "outline"}
+      onClick={() => {
+        if (editingVideo.thumbnail instanceof File) {
+          setEditingVideo({ ...editingVideo, thumbnail: '' });
+        }
+      }}
+    >
+      <LinkIcon className="h-4 w-4 mr-2" />
+      {typeof editingVideo.thumbnail === "string" ? 'Using URL' : 'Use URL Instead'}
+    </Button>
+  </div>
+{typeof editingVideo.thumbnail === "string" ? (
+  <div className="space-y-2">
+    <Input
+      value={editingVideo.thumbnail}
+      onChange={(e) => setEditingVideo({ ...editingVideo, thumbnail: e.target.value })}
+      placeholder="https://images.unsplash.com/..."
+    />
+    {editingVideo.thumbnail && (
+      <img src={editingVideo.thumbnail} alt="Preview" className="w-full h-48 object-cover rounded" />
+    )}
+  </div>
+) : (
+  <FileUpload
+    accept="image/*"
+    maxSize={5}
+    currentFile={editingVideo.thumbnail}
+    onUpload={(file) => setEditingVideo({ ...editingVideo, thumbnail: file })}
+    type="image"
+    label="Upload Video Thumbnail"
+  />
+)}
 
-                  )}
-                </div>
+{editingVideo.thumbnail instanceof File && (
+  <img
+    src={URL.createObjectURL(editingVideo.thumbnail)}
+    alt="Preview"
+    className="w-full h-48 object-cover rounded mt-2"
+  />
+)}
+
+</div>
+
 
                 <div className="space-y-2">
                   <Label>External Link (optional)</Label>
@@ -748,7 +785,7 @@ export default function DashboardNews() {
 
           <div className="grid gap-4">
             {featuredStories.map((story) => (
-              <Card key={story.id} className={story.featured ? "border-yellow-400 border-2" : ""}>
+              <Card key={story._id} className={story.featured ? "border-yellow-400 border-2" : ""}>
                 <CardContent className="p-6">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
@@ -792,7 +829,8 @@ export default function DashboardNews() {
           {editingStory && (
             <Card className="border-2 border-blue-500 mt-6">
               <CardHeader>
-                <CardTitle>{editingStory.id === 0 ? 'New Featured Story' : 'Edit Featured Story'}</CardTitle>
+         <CardTitle>{!editingStory._id ? 'New Featured Story' : 'Edit Featured Story'}</CardTitle>
+
                 <CardDescription>Hero stories with custom images</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -888,6 +926,7 @@ export default function DashboardNews() {
   type="image"
   label="Upload Story Image"
 />
+
                   ) : (
                     <Input
                       value={editingStory.image}
