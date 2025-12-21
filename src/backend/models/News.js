@@ -35,9 +35,9 @@ const featuredVideoSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 
-featuredStorySchema.index({ date: -1 });
-featuredStorySchema.index({ category: 1 });
-featuredStorySchema.index({ sdg: 1 });
+featuredVideoSchema.index({ createdAt: -1 }); // sort newest videos first
+featuredVideoSchema.index({ category: 1 });   // filter by category
+featuredVideoSchema.index({ title: 1 });   
 // ========================================
 // Featured Story Schema
 // ========================================
