@@ -480,12 +480,12 @@ export default function DashboardNews() {
                     </div>
                   ) : (
                     <FileUpload
-                      accept="image/*"
-                      maxSize={5}
-                      currentFile={editingArticle.image}
-                      onUpload={(base64) => setEditingArticle({ ...editingArticle, image: base64 })}
-                      type="image"
-                      label="Upload Article Image"
+  accept="image/*"
+  maxSize={5}
+  currentFile={editingArticle.image}
+  onUpload={(file) => setEditingArticle({ ...editingArticle, image: file })} // ✅ store File, not base64
+  type="image"
+  label="Upload Article Image"
                     />
                   )}
                 </div>
@@ -674,14 +674,15 @@ export default function DashboardNews() {
                       )}
                     </div>
                   ) : (
-                    <FileUpload
-                      accept="image/*"
-                      maxSize={5}
-                      currentFile={editingVideo.thumbnail}
-                      onUpload={(base64) => setEditingVideo({ ...editingVideo, thumbnail: base64 })}
-                      type="image"
-                      label="Upload Video Thumbnail"
-                    />
+                  <FileUpload
+  accept="image/*"
+  maxSize={5}
+  currentFile={editingVideo.thumbnail}
+  onUpload={(file) => setEditingVideo({ ...editingVideo, thumbnail: file })} // ✅ store File, not base64
+  type="image"
+  label="Upload Video Thumbnail"
+/>
+
                   )}
                 </div>
 
@@ -869,14 +870,14 @@ export default function DashboardNews() {
                   </div>
                   
                   {editingStory.useCustomImage ? (
-                    <FileUpload
-                      accept="image/*"
-                      maxSize={5}
-                      currentFile={editingStory.image}
-                      onUpload={(base64) => setEditingStory({ ...editingStory, image: base64 })}
-                      type="image"
-                      label="Upload Story Image"
-                    />
+                   <FileUpload
+  accept="image/*"
+  maxSize={5}
+  currentFile={editingStory.image}
+  onUpload={(file) => setEditingStory({ ...editingStory, image: file })} // ✅ store File, not base64
+  type="image"
+  label="Upload Story Image"
+/>
                   ) : (
                     <Input
                       value={editingStory.image}
