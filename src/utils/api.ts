@@ -60,9 +60,12 @@ export const apiCall = async (
       },
       credentials: 'include'
     });
-
-    const data = await response.json();
-
+let data;
+try {
+  data = await response.json();
+} catch {
+  data = {};
+}
     if (!response.ok) {
       // Handle authentication errors
       if (response.status === 401) {
