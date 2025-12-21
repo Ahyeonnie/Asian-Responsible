@@ -12,14 +12,12 @@ import { FileUpload } from './FileUpload';
 import { ConfirmDialog } from '../ui/confirm-dialog';
 import { api } from '../../utils/api';
 
-// Interfaces
 interface NewsArticle {
-  _id?: string;
+  _id?: string; // MongoDB ObjectId
   title: string;
-  description: string;
+  description: string; // ✅ match backend
   excerpt: string;
-  image: string | File;
-  cloudinaryId?: string;
+  image: string;
   date: string;
   category: string;
   author: string;
@@ -29,46 +27,36 @@ interface NewsArticle {
 }
 
 interface NewsVideo {
-  _id?: string;
+  _id?: string;        // MongoDB ObjectId
   title: string;
   description: string;
-  thumbnail: string | File;
+  thumbnail: string;   // image thumbnail
   duration: string;
-  cloudinaryId?: string;
   views: string;
   date: string;
-  videoUrl: string;
-  link?: string;
+  videoUrl: string;    // required by backend schema
+  link?: string;       // optional external link
 }
 
+
 interface FeaturedStory {
-  _id?: string;
+ _id?: string;
   title: string;
   excerpt: string;
   date: string;
   readTime: string;
   category: string;
-  cloudinaryId?: string;
   sdg: number;
   featured: boolean;
-  image: string | File;
+  image: string;
   useCustomImage: boolean;
-  link?: string;
+  link?: string; // Optional external link
 }
 
-function normalizeDate(date: string | Date): string {
-  return new Date(date).toISOString().split("T")[0];
-}
-
-// Shared upload helper
-async function uploadIfFile(fileOrUrl: string | File, type: "image" | "thumbnail") {
-  if (fileOrUrl instanceof File) {
-    return type === "image"
-      ? await api.uploadImage(fileOrUrl)
-      : await api.uploadThumbnail(fileOrUrl);
-  }
-  return { imageUrl: fileOrUrl, thumbnailUrl: fileOrUrl, publicId: undefined };
-}
+// ✅ Start with empty arrays instead of hardcoded defaults
+const defaultArticles: NewsArticle[] = [];
+const defaultVideos: NewsVideo[] = [];
+const defaultStories: FeaturedStory[] = [];
 
 export default function DashboardNews() {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
@@ -77,7 +65,9 @@ export default function DashboardNews() {
   const [editingArticle, setEditingArticle] = useState<NewsArticle | null>(null);
   const [editingVideo, setEditingVideo] = useState<NewsVideo | null>(null);
   const [editingStory, setEditingStory] = useState<FeaturedStory | null>(null);
-
+  const [loading, setLoading] = useState(false);
+  
+  // Confirmation dialog states
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     title: string;
@@ -92,7 +82,7 @@ export default function DashboardNews() {
     variant: 'default'
   });
 
-  // Load data
+  // Load data on component mount - sync with website
   useEffect(() => {
     loadArticles();
     loadVideos();
@@ -102,191 +92,269 @@ export default function DashboardNews() {
   const loadArticles = async () => {
     try {
       const data = await api.getNews();
-      setArticles(data?.articles || []);
-    } catch {
-      toast.error('Failed to load news articles.');
-      setArticles([]);
+      if (data && data.articles && Array.isArray(data.articles) && data.articles.length > 0) {
+        setArticles(data.articles);
+      } else {
+        setArticles(defaultArticles);
+      }
+    } catch (error) {
+      console.error('Error loading articles:', error);
+      toast.error('Failed to load news articles. Please try again.');
+      setArticles(defaultArticles);
     }
   };
 
   const loadVideos = async () => {
     try {
       const data = await api.getNews();
-      setVideos(data?.videos || []);
-    } catch {
-      toast.error('Failed to load videos.');
-      setVideos([]);
+      if (data && data.videos && Array.isArray(data.videos) && data.videos.length > 0) {
+        setVideos(data.videos);
+      } else {
+        setVideos(defaultVideos);
+      }
+    } catch (error) {
+      console.error('Error loading videos:', error);
+      toast.error('Failed to load videos. Please try again.');
+      setVideos(defaultVideos);
     }
   };
 
   const loadFeaturedStories = async () => {
     try {
       const data = await api.getNews();
-      setFeaturedStories(data?.stories || []);
-    } catch {
-      toast.error('Failed to load featured stories.');
-      setFeaturedStories([]);
+      if (data && data.stories && Array.isArray(data.stories) && data.stories.length > 0) {
+        setFeaturedStories(data.stories);
+      } else {
+        setFeaturedStories(defaultStories);
+      }
+    } catch (error) {
+      console.error('Error loading featured stories:', error);
+      toast.error('Failed to load featured stories. Please try again.');
+      setFeaturedStories(defaultStories);
     }
   };
 
-  // ✅ Article CRUD
-  const handleSaveArticle = async () => {
-    if (!editingArticle) return;
+ 
+ const saveArticles = async (updatedArticles: NewsArticle[]) => {
+  try {
+    const data = {
+      articles: updatedArticles,
+      videos: videos,
+      stories: featuredStories
+    };
+    await api.updateAllNews(data);   // <-- fixed
+;
+    setArticles(updatedArticles);
+  } catch (error: any) {
+    toast.error(error.message || 'Failed to save articles');
+  
+    setArticles(updatedArticles);
+  }
+};
 
-    const requiredFields = ["title","excerpt","author","date","image","category"];
-    const missing = requiredFields.filter(f => !editingArticle[f as keyof NewsArticle]);
+const saveVideos = async (updatedVideos: NewsVideo[]) => {
+  try {
+    const data = {
+      articles: articles,
+      videos: updatedVideos,
+      stories: featuredStories
+    };
+    await api.updateAllNews(data);   // <-- fixed
+
+
+    setVideos(updatedVideos);
+  } catch (error: any) {
+    toast.error(error.message || 'Failed to save videos');
+
+    setVideos(updatedVideos);
+  }
+};
+
+const saveFeaturedStories = async (updatedStories: FeaturedStory[]) => {
+  try {
+    const data = {
+      articles: articles,
+      videos: videos,
+      stories: updatedStories
+    };
+    await api.updateAllNews(data);   // <-- fixed
+
+
+    setFeaturedStories(updatedStories);
+  } catch (error: any) {
+    toast.error(error.message || 'Failed to save stories');
+
+    setFeaturedStories(updatedStories);
+  }
+};
+
+  // Article CRUD operations
+ // ✅ Article CRUD operations
+// ✅ Article CRUD operations
+const handleSaveArticle = () => {
+  if (editingArticle) {
+    // Required fields aligned with NewsArticle interface
+    const requiredFields = [
+      { key: "title", label: "Title" },
+    
+      { key: "excerpt", label: "Excerpt" },
+      { key: "author", label: "Author" },
+      { key: "date", label: "Date" },
+      { key: "image", label: "Image" },
+      { key: "category", label: "Category" },
+    ];
+
+    const missing = requiredFields.filter(
+      f => !editingArticle[f.key as keyof NewsArticle]
+    );
+
     if (missing.length > 0) {
-      toast.error(`Missing fields: ${missing.join(", ")}`);
+      toast.error(
+        `Please fill in required fields: ${missing.map(f => f.label).join(", ")}`
+      );
       return;
     }
 
+    const isNew = !editingArticle._id; // ✅ use _id instead of id
     setConfirmDialog({
       open: true,
-      title: editingArticle._id ? "Update Article" : "Create Article",
-      description: editingArticle._id
-        ? "Are you sure you want to update this article?"
-        : "Are you sure you want to create this article?",
-      onConfirm: async () => {
-        try {
-          let imageUrl = typeof editingArticle.image === "string" ? editingArticle.image : "";
-          let cloudinaryId = editingArticle.cloudinaryId;
-
-          if (editingArticle.image instanceof File) {
-            const uploadRes = await api.uploadImage(editingArticle.image);
-            imageUrl = uploadRes.imageUrl;
-            cloudinaryId = uploadRes.publicId;
-          }
-
-          const payload = { ...editingArticle, image: imageUrl, cloudinaryId };
-
-          if (!editingArticle._id) {
-            const saved = await api.createArticle(payload);
-            setArticles([...articles, saved.data]);
-            toast.success("Article created successfully!");
-          } else {
-            const updated = await api.updateArticle(editingArticle._id, payload);
-            setArticles(articles.map(a => a._id === editingArticle._id ? updated.data : a));
-            toast.success("Article updated successfully!");
-          }
-          setEditingArticle(null);
-        } catch (err: any) {
-          console.error(err);
-          toast.error(err.message || "Failed to save article");
+      title: isNew ? "Create Article" : "Update Article",
+      description: isNew
+        ? "Are you sure you want to create this article? It will be immediately visible on the website."
+        : "Are you sure you want to save these changes? The article will be updated on the website.",
+      onConfirm: () => {
+        if (isNew) {
+          const { _id, ...data } = editingArticle; // strip accidental _id
+          const newArticle = { ...data };
+          saveArticles([...articles, newArticle]);
+          toast.success("Article created successfully!");
+        } else {
+          saveArticles(
+            articles.map(a =>
+              a._id === editingArticle._id ? editingArticle : a
+            )
+          );
+          toast.success("Article updated successfully!");
         }
-      }
+        setEditingArticle(null);
+      },
+      variant: "default",
     });
-  };
+  }
+};
 
-  const handleDeleteArticle = async (id: string) => {
-    try {
-      await api.deleteArticle(id);
-      setArticles(articles.filter(a => a._id !== id));
-      toast.success("Article deleted successfully!");
-    } catch {
-      toast.error("Failed to delete article");
-    }
-  };
+const handleDeleteArticle = async (id: string) => {
+  try {
+    await api.deleteArticle(id); // <-- call backend DELETE
+    setArticles(articles.filter(a => a._id !== id));
+    toast.success("Article deleted successfully!");
+  } catch (err) {
+    toast.error("Failed to delete article");
+  }
+};
 
-  // ✅ Video CRUD
-  const handleSaveVideo = async () => {
-    if (!editingVideo) return;
+// ✅ Video CRUD operations (still use id: number)
+const handleSaveVideo = () => {
+  if (editingVideo) {
+    const requiredFields = [
+      { key: "title", label: "Title" },
+      { key: "description", label: "Description" },
+      { key: "date", label: "Date" },
+      { key: "thumbnail", label: "Thumbnail" },
+    ];
 
-    const requiredFields = ["title","description","date","thumbnail"];
-    const missing = requiredFields.filter(f => !editingVideo[f as keyof NewsVideo]);
+     const missing = requiredFields.filter(
+      f => !editingVideo[f.key as keyof NewsVideo]
+    );
+
     if (missing.length > 0) {
-      toast.error(`Missing fields: ${missing.join(", ")}`);
+      toast.error(
+        `Please fill in required fields: ${missing.map(f => f.label).join(", ")}`
+      );
+      return;
+    }
+    const isNew = !editingVideo._id; // ✅ use _id instead of id
+    if (isNew) {
+      const { _id, ...data } = editingVideo; // strip accidental _id
+      const newVideo = { ...data };
+      saveVideos([...videos, newVideo]);
+      toast.success("Video created successfully!");
+    } else {
+      saveVideos(
+        videos.map(v =>
+          v._id === editingVideo._id ? editingVideo : v
+        )
+      );
+      toast.success("Video updated successfully!");
+    }
+    setEditingVideo(null);
+  }
+};
+const handleDeleteVideo = async (id: string) => {
+  try {
+    await api.deleteVideo(id); // <-- call backend DELETE
+    setVideos(videos.filter(v => v._id !== id));
+    toast.success("Video deleted successfully!");
+  } catch (err) {
+    toast.error("Failed to delete video");
+  }
+};
+
+// ✅ Featured Story CRUD operations (still use id: number)
+const handleSaveStory = () => {
+  if (editingStory) {
+    const requiredFields = [
+      { key: "title", label: "Title" },
+      { key: "excerpt", label: "Excerpt" },
+      { key: "date", label: "Date" },
+      { key: "readTime", label: "Read Time" },
+      { key: "category", label: "Category" },
+      { key: "image", label: "Image" },
+      { key: "sdg", label: "SDG Number" },
+    ];
+
+    const missing = requiredFields.filter(
+      f => !editingStory[f.key as keyof FeaturedStory]
+    );
+
+    if (missing.length > 0) {
+      toast.error(
+        `Please fill in required fields: ${missing.map(f => f.label).join(", ")}`
+      );
       return;
     }
 
-    try {
-      let thumbUrl = typeof editingVideo.thumbnail === "string" ? editingVideo.thumbnail : "";
-      let cloudinaryId = editingVideo.cloudinaryId;
-
-      if (editingVideo.thumbnail instanceof File) {
-        const uploadRes = await api.uploadThumbnail(editingVideo.thumbnail);
-        thumbUrl = uploadRes.thumbnailUrl;
-        cloudinaryId = uploadRes.publicId;
-      }
-
-      const payload = { ...editingVideo, thumbnail: thumbUrl, cloudinaryId };
-
-      if (!editingVideo._id) {
-        const saved = await api.createVideo(payload);
-        setVideos([...videos, saved.data]);
-        toast.success("Video created successfully!");
-      } else {
-        const updated = await api.updateVideo(editingVideo._id, payload);
-        setVideos(videos.map(v => v._id === editingVideo._id ? updated.data : v));
-        toast.success("Video updated successfully!");
-      }
-      setEditingVideo(null);
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || "Failed to save video");
+    const isNew = !editingStory._id;
+    if (isNew) {
+      const { _id, ...data } = editingStory; // strip accidental _id
+      const newStory = { ...data };
+      saveFeaturedStories([...featuredStories, newStory]);
+      toast.success("Featured story created successfully!");
+    } else {
+      saveFeaturedStories(
+        featuredStories.map(s =>
+          s._id === editingStory._id ? editingStory : s
+        )
+      );
+      toast.success("Featured story updated successfully!");
     }
-  };
+    
 
-  const handleDeleteVideo = async (id: string) => {
-    try {
-      await api.deleteVideo(id);
-      setVideos(videos.filter(v => v._id !== id));
-      toast.success("Video deleted successfully!");
-    } catch {
-      toast.error("Failed to delete video");
-    }
-  };
+    setEditingStory(null);
+  }
+};
 
-  // ✅ Story CRUD
-  const handleSaveStory = async () => {
-    if (!editingStory) return;
 
-    const requiredFields = ["title","excerpt","date","readTime","category","image","sdg"];
-    const missing = requiredFields.filter(f => !editingStory[f as keyof FeaturedStory]);
-    if (missing.length > 0) {
-      toast.error(`Missing fields: ${missing.join(", ")}`);
-      return;
-    }
+const handleDeleteStory = async (id: string) => {
+  try {
+    await api.deleteStory(id); // <-- call backend DELETE
+    setFeaturedStories(featuredStories.filter(s => s._id !== id));
+    toast.success("Featured story deleted successfully!");
+  } catch (err) {
+    toast.error("Failed to delete story");
+  }
+};
 
-    try {
-      let imageUrl = typeof editingStory.image === "string" ? editingStory.image : "";
-      let cloudinaryId = editingStory.cloudinaryId;
-
-      if (editingStory.image instanceof File) {
-        const uploadRes = await api.uploadImage(editingStory.image);
-        imageUrl = uploadRes.imageUrl;
-        cloudinaryId = uploadRes.publicId;
-      }
-
-      const payload = { ...editingStory, image: imageUrl, cloudinaryId };
-
-      if (!editingStory._id) {
-        const saved = await api.createStory(payload);
-        setFeaturedStories([...featuredStories, saved.data]);
-        toast.success("Story created successfully!");
-      } else {
-        const updated = await api.updateStory(editingStory._id, payload);
-        setFeaturedStories(featuredStories.map(s => s._id === editingStory._id ? updated.data : s));
-        toast.success("Story updated successfully!");
-      }
-
-      setEditingStory(null);   // ✅ moved inside try block correctly
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || "Failed to save story");
-    }
-  };
-
-  const handleDeleteStory = async (id: string) => {
-    try {
-      await api.deleteStory(id);
-      setFeaturedStories(featuredStories.filter(s => s._id !== id));
-      toast.success("Story deleted successfully!");
-    } catch {
-      toast.error("Failed to delete story");
-    }
-  };
-
-  
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -342,7 +410,7 @@ export default function DashboardNews() {
 
           <div className="grid gap-4">
             {articles.map((article) => (
-              <Card key={article._id} className={article.featured ? "border-yellow-400 border-2" : ""}>
+              <Card key={article.id} className={article.featured ? "border-yellow-400 border-2" : ""}>
                 <CardContent className="p-6">
                   <div className="flex gap-4">
                     {article.image && (
@@ -375,7 +443,7 @@ export default function DashboardNews() {
                             variant="outline"
                             onClick={() => setEditingArticle(article)}
                           >
-                            <Edit className= "h-4 w-4" />
+                            <Edit className="h-4 w-4" />
                           </Button>
                           <Button
                             size="sm"
@@ -397,7 +465,7 @@ export default function DashboardNews() {
           {editingArticle && (
             <Card className="border-2 border-blue-500 mt-6">
               <CardHeader>
-                <CardTitle>{!editingArticle._id ? 'New Article' : 'Edit Article'}</CardTitle>
+                <CardTitle>{editingArticle.id === 0 ? 'New Article' : 'Edit Article'}</CardTitle>
                 <CardDescription>Create engaging in-depth articles for your readers</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -479,25 +547,47 @@ export default function DashboardNews() {
                   </div>
                 </div>
 
-           <div className="space-y-2">
-  <Label>Featured Image *</Label>
-  <FileUpload
-    accept="image/*"
-    maxSize={5}
-    currentFile={editingArticle.image}
-    onUpload={(file) => setEditingArticle({ ...editingArticle, image: file })}
-    type="image"
-    label="Upload Article Image"
-  />
-
-  {editingArticle.image instanceof File && (
-    <img
-      src={URL.createObjectURL(editingArticle.image)}
-      alt="Preview"
-      className="w-full h-48 object-cover rounded mt-2"
-    />
-  )}
-</div>
+                <div className="space-y-2">
+                  <Label>Featured Image *</Label>
+                  <div className="flex gap-2 items-center mb-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={editingArticle.image && !editingArticle.image.startsWith('data:') ? "default" : "outline"}
+                      onClick={() => {
+                        const useUrl = editingArticle.image && editingArticle.image.startsWith('data:');
+                        if (useUrl) {
+                          setEditingArticle({ ...editingArticle, image: '' });
+                        }
+                      }}
+                    >
+                      <LinkIcon className="h-4 w-4 mr-2" />
+                      {editingArticle.image && !editingArticle.image.startsWith('data:') ? 'Using URL' : 'Use URL Instead'}
+                    </Button>
+                  </div>
+                  
+                  {editingArticle.image && !editingArticle.image.startsWith('data:') ? (
+                    <div className="space-y-2">
+                      <Input
+                        value={editingArticle.image}
+                        onChange={(e) => setEditingArticle({ ...editingArticle, image: e.target.value })}
+                        placeholder="https://images.unsplash.com/..."
+                      />
+                      {editingArticle.image && (
+                        <img src={editingArticle.image} alt="Preview" className="w-full h-48 object-cover rounded" />
+                      )}
+                    </div>
+                  ) : (
+                    <FileUpload
+                      accept="image/*"
+                      maxSize={5}
+                      currentFile={editingArticle.image}
+                      onUpload={(base64) => setEditingArticle({ ...editingArticle, image: base64 })}
+                      type="image"
+                      label="Upload Article Image"
+                    />
+                  )}
+                </div>
 
                 <div className="space-y-2">
                   <Label>External Link (optional)</Label>
@@ -548,8 +638,7 @@ export default function DashboardNews() {
 
           <div className="grid gap-4">
             {videos.map((video) => (
-         <Card key={video._id}>
-
+              <Card key={video.id}>
                 <CardContent className="p-6">
                   <div className="flex gap-4">
                     {video.thumbnail && (
@@ -601,8 +690,7 @@ export default function DashboardNews() {
           {editingVideo && (
             <Card className="border-2 border-blue-500 mt-6">
               <CardHeader>
-            <CardTitle>{!editingVideo._id ? 'New Video' : 'Edit Video'}</CardTitle>
-
+                <CardTitle>{editingVideo.id === 0 ? 'New Video' : 'Edit Video'}</CardTitle>
                 <CardDescription>Add featured videos to showcase your work</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -654,55 +742,47 @@ export default function DashboardNews() {
                   </div>
                 </div>
 
-              <div className="space-y-2">
-  <Label>Thumbnail Image *</Label>
-  <div className="flex gap-2 items-center mb-2">
-    <Button
-      type="button"
-      size="sm"
-      variant={typeof editingVideo.thumbnail === "string" ? "default" : "outline"}
-      onClick={() => {
-        if (editingVideo.thumbnail instanceof File) {
-          setEditingVideo({ ...editingVideo, thumbnail: '' });
-        }
-      }}
-    >
-      <LinkIcon className="h-4 w-4 mr-2" />
-      {typeof editingVideo.thumbnail === "string" ? 'Using URL' : 'Use URL Instead'}
-    </Button>
-  </div>
-{typeof editingVideo.thumbnail === "string" ? (
-  <div className="space-y-2">
-    <Input
-      value={editingVideo.thumbnail}
-      onChange={(e) => setEditingVideo({ ...editingVideo, thumbnail: e.target.value })}
-      placeholder="https://images.unsplash.com/..."
-    />
-    {editingVideo.thumbnail && (
-      <img src={editingVideo.thumbnail} alt="Preview" className="w-full h-48 object-cover rounded" />
-    )}
-  </div>
-) : (
-  <FileUpload
-    accept="image/*"
-    maxSize={5}
-    currentFile={editingVideo.thumbnail}
-    onUpload={(file) => setEditingVideo({ ...editingVideo, thumbnail: file })}
-    type="image"
-    label="Upload Video Thumbnail"
-  />
-)}
-
-{editingVideo.thumbnail instanceof File && (
-  <img
-    src={URL.createObjectURL(editingVideo.thumbnail)}
-    alt="Preview"
-    className="w-full h-48 object-cover rounded mt-2"
-  />
-)}
-
-</div>
-
+                <div className="space-y-2">
+                  <Label>Thumbnail Image *</Label>
+                  <div className="flex gap-2 items-center mb-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={editingVideo.thumbnail && !editingVideo.thumbnail.startsWith('data:') ? "default" : "outline"}
+                      onClick={() => {
+                        const useUrl = editingVideo.thumbnail && editingVideo.thumbnail.startsWith('data:');
+                        if (useUrl) {
+                          setEditingVideo({ ...editingVideo, thumbnail: '' });
+                        }
+                      }}
+                    >
+                      <LinkIcon className="h-4 w-4 mr-2" />
+                      {editingVideo.thumbnail && !editingVideo.thumbnail.startsWith('data:') ? 'Using URL' : 'Use URL Instead'}
+                    </Button>
+                  </div>
+                  
+                  {editingVideo.thumbnail && !editingVideo.thumbnail.startsWith('data:') ? (
+                    <div className="space-y-2">
+                      <Input
+                        value={editingVideo.thumbnail}
+                        onChange={(e) => setEditingVideo({ ...editingVideo, thumbnail: e.target.value })}
+                        placeholder="https://images.unsplash.com/..."
+                      />
+                      {editingVideo.thumbnail && (
+                        <img src={editingVideo.thumbnail} alt="Preview" className="w-full h-48 object-cover rounded" />
+                      )}
+                    </div>
+                  ) : (
+                    <FileUpload
+                      accept="image/*"
+                      maxSize={5}
+                      currentFile={editingVideo.thumbnail}
+                      onUpload={(base64) => setEditingVideo({ ...editingVideo, thumbnail: base64 })}
+                      type="image"
+                      label="Upload Video Thumbnail"
+                    />
+                  )}
+                </div>
 
                 <div className="space-y-2">
                   <Label>External Link (optional)</Label>
@@ -756,7 +836,7 @@ export default function DashboardNews() {
 
           <div className="grid gap-4">
             {featuredStories.map((story) => (
-              <Card key={story._id} className={story.featured ? "border-yellow-400 border-2" : ""}>
+              <Card key={story.id} className={story.featured ? "border-yellow-400 border-2" : ""}>
                 <CardContent className="p-6">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
@@ -800,8 +880,7 @@ export default function DashboardNews() {
           {editingStory && (
             <Card className="border-2 border-blue-500 mt-6">
               <CardHeader>
-         <CardTitle>{!editingStory._id ? 'New Featured Story' : 'Edit Featured Story'}</CardTitle>
-
+                <CardTitle>{editingStory.id === 0 ? 'New Featured Story' : 'Edit Featured Story'}</CardTitle>
                 <CardDescription>Hero stories with custom images</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -889,15 +968,14 @@ export default function DashboardNews() {
                   </div>
                   
                   {editingStory.useCustomImage ? (
-                   <FileUpload
-  accept="image/*"
-  maxSize={5}
-  currentFile={editingStory.image}
-  onUpload={(file) => setEditingStory({ ...editingStory, image: file })} // ✅ store File, not base64
-  type="image"
-  label="Upload Story Image"
-/>
-
+                    <FileUpload
+                      accept="image/*"
+                      maxSize={5}
+                      currentFile={editingStory.image}
+                      onUpload={(base64) => setEditingStory({ ...editingStory, image: base64 })}
+                      type="image"
+                      label="Upload Story Image"
+                    />
                   ) : (
                     <Input
                       value={editingStory.image}
