@@ -190,51 +190,15 @@ export const api = {
     method: 'DELETE'
   }),
 
-// ========================================
-// NEWS SECTION
-// ========================================
-getNews: () => apiCall('/news'),
+  // ========================================
+  // NEWS SECTION
+  // ========================================
+  getNews: () => apiCall('/news'),
 
 updateAllNews: (data: any) => apiCall('/news/all', {
   method: 'PUT',
   body: JSON.stringify(data)
 }),
-
-uploadImage: async (file: File) => {
-  const formData = new FormData();
-  formData.append("image", file);
-  const res = await fetch(`${API_URL}/upload/image`, { // ✅ corrected path
-    method: "POST",
-    body: formData,
-    credentials: "include"
-  });
-  if (!res.ok) throw new Error("Image upload failed");
-  return res.json(); // { url, publicId }
-},
-
-uploadVideo: async (file: File) => {
-  const formData = new FormData();
-  formData.append("video", file);
-  const res = await fetch(`${API_URL}/upload/video`, { // ✅ corrected path
-    method: "POST",
-    body: formData,
-    credentials: "include"
-  });
-  if (!res.ok) throw new Error("Video upload failed");
-  return res.json(); // { url, publicId }
-},
-
-uploadThumbnail: async (file: File) => {
-  const formData = new FormData();
-  formData.append("image", file); // ✅ backend expects "image"
-  const res = await fetch(`${API_URL}/upload/image`, { // ✅ corrected path
-    method: "POST",
-    body: formData,
-    credentials: "include"
-  });
-  if (!res.ok) throw new Error("Thumbnail upload failed");
-  return res.json(); // { url, publicId }
-},
 
 // Article CRUD
 createArticle: (data: any) => apiCall('/news/article', {
