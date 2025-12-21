@@ -63,15 +63,20 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // ✅ Force headers to be attached even on cached/304 responses
+// Force CORS headers on all responses, including 304
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', allowedOrigins.includes(req.headers.origin) ? req.headers.origin : allowedOrigins[0]);
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   next();
 });
 
+
 // Handle preflight OPTIONS requests explicitly
-app.options('*', cors(corsOptions));;
+app.options('*', cors(corsOptions));
 
 // ========================================
 // BODY PARSING MIDDLEWARE
