@@ -137,56 +137,52 @@ export default function DashboardNews() {
  
  const saveArticles = async (updatedArticles: NewsArticle[]) => {
   try {
-    const data = {
-      articles: updatedArticles,
-      videos: videos,
-      stories: featuredStories
-    };
-    await api.updateAllNews(data);   // <-- fixed
-;
+    for (const article of updatedArticles) {
+      if (!article._id) {
+        await api.createArticle(article);   // POST /news/article
+      } else {
+        await api.updateArticle(article._id, article); // PUT /news/article/:id
+      }
+    }
     setArticles(updatedArticles);
+    toast.success("Articles saved successfully!");
   } catch (error: any) {
-    toast.error(error.message || 'Failed to save articles');
-  
-    setArticles(updatedArticles);
+    toast.error(error.message || "Failed to save articles");
   }
 };
 
 const saveVideos = async (updatedVideos: NewsVideo[]) => {
   try {
-    const data = {
-      articles: articles,
-      videos: updatedVideos,
-      stories: featuredStories
-    };
-    await api.updateAllNews(data);   // <-- fixed
-
-
+    for (const video of updatedVideos) {
+      if (!video._id) {
+        await api.createVideo(video);   // POST /news/video
+      } else {
+        await api.updateVideo(video._id, video); // PUT /news/video/:id
+      }
+    }
     setVideos(updatedVideos);
+    toast.success("Videos saved successfully!");
   } catch (error: any) {
-    toast.error(error.message || 'Failed to save videos');
-
-    setVideos(updatedVideos);
+    toast.error(error.message || "Failed to save videos");
   }
 };
 
 const saveFeaturedStories = async (updatedStories: FeaturedStory[]) => {
   try {
-    const data = {
-      articles: articles,
-      videos: videos,
-      stories: updatedStories
-    };
-    await api.updateAllNews(data);   // <-- fixed
-
-
+    for (const story of updatedStories) {
+      if (!story._id) {
+        await api.createStory(story);   // POST /news/story
+      } else {
+        await api.updateStory(story._id, story); // PUT /news/story/:id
+      }
+    }
     setFeaturedStories(updatedStories);
+    toast.success("Stories saved successfully!");
   } catch (error: any) {
-    toast.error(error.message || 'Failed to save stories');
-
-    setFeaturedStories(updatedStories);
+    toast.error(error.message || "Failed to save stories");
   }
 };
+
 
   // Article CRUD operations
  // ✅ Article CRUD operations
