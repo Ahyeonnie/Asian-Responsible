@@ -108,46 +108,50 @@ export default function DashboardNews() {
   };
 
   // ✅ Article CRUD
-  const handleSaveArticle = async () => {
-    if (!editingArticle) return;
+ const handleSaveArticle = async () => {
+  if (!editingArticle) return;
 
-    const requiredFields = ["title","excerpt","author","date","image","category"];
-    const missing = requiredFields.filter(f => !editingArticle[f as keyof NewsArticle]);
-    if (missing.length > 0) {
-      toast.error(`Missing fields: ${missing.join(", ")}`);
-      return;
-    }
+  const requiredFields = ["title","excerpt","author","date","image","category"];
+  const missing = requiredFields.filter(f => !editingArticle[f as keyof NewsArticle]);
+  if (missing.length > 0) {
+    toast.error(`Missing fields: ${missing.join(", ")}`);
+    return;
+  }
 
-    setConfirmDialog({
-      open: true,
-      title: editingArticle._id ? "Update Article" : "Create Article",
-      description: editingArticle._id
-        ? "Are you sure you want to update this article?"
-        : "Are you sure you want to create this article?",
-      onConfirm: async () => {
-        try {
-          let imageUrl = editingArticle.image;
-          if (editingArticle.image instanceof File) {
-            const uploadRes = await api.uploadImage(editingArticle.image);
-            imageUrl = uploadRes.imageUrl;
-          }
+  setConfirmDialog({
+    open: true,
+    title: editingArticle._id ? "Update Article" : "Create Article",
+    description: editingArticle._id
+      ? "Are you sure you want to update this article?"
+      : "Are you sure you want to create this article?",
+    onConfirm: async () => {
+      try {
+        let imageUrl = editingArticle.image;
+        let cloudinaryId = editingArticle.cloudinaryId;
 
-          if (!editingArticle._id) {
-            const saved = await api.createArticle({ ...editingArticle, image: imageUrl });
-            setArticles([...articles, saved.data]);
-            toast.success("Article created successfully!");
-          } else {
-            const updated = await api.updateArticle(editingArticle._id, { ...editingArticle, image: imageUrl });
-            setArticles(articles.map(a => a._id === editingArticle._id ? updated.data : a));
-            toast.success("Article updated successfully!");
-          }
-          setEditingArticle(null);
-        } catch (err: any) {
-          toast.error(err.message || "Failed to save article");
+        if (editingArticle.image instanceof File) {
+          const uploadRes = await api.uploadImage(editingArticle.image);
+          imageUrl = uploadRes.imageUrl;
+          cloudinaryId = uploadRes.publicId;   // ✅ include publicId
         }
+
+        if (!editingArticle._id) {
+          const saved = await api.createArticle({ ...editingArticle, image: imageUrl, cloudinaryId });
+          setArticles([...articles, saved.data]);
+          toast.success("Article created successfully!");
+        } else {
+          const updated = await api.updateArticle(editingArticle._id, { ...editingArticle, image: imageUrl, cloudinaryId });
+          setArticles(articles.map(a => a._id === editingArticle._id ? updated.data : a));
+          toast.success("Article updated successfully!");
+        }
+        setEditingArticle(null);
+      } catch (err: any) {
+        toast.error(err.message || "Failed to save article");
       }
-    });
-  };
+    }
+  });
+};
+
 
   const handleDeleteArticle = async (id: string) => {
     try {
@@ -160,37 +164,41 @@ export default function DashboardNews() {
   };
 
   // ✅ Video CRUD
-  const handleSaveVideo = async () => {
-    if (!editingVideo) return;
+ const handleSaveVideo = async () => {
+  if (!editingVideo) return;
 
-    const requiredFields = ["title","description","date","thumbnail"];
-    const missing = requiredFields.filter(f => !editingVideo[f as keyof NewsVideo]);
-    if (missing.length > 0) {
-      toast.error(`Missing fields: ${missing.join(", ")}`);
-      return;
+  const requiredFields = ["title","description","date","thumbnail"];
+  const missing = requiredFields.filter(f => !editingVideo[f as keyof NewsVideo]);
+  if (missing.length > 0) {
+    toast.error(`Missing fields: ${missing.join(", ")}`);
+    return;
+  }
+
+  try {
+    let thumbUrl = editingVideo.thumbnail;
+    let cloudinaryId = editingVideo.cloudinaryId;
+
+    if (editingVideo.thumbnail instanceof File) {
+      const uploadRes = await api.uploadThumbnail(editingVideo.thumbnail);
+      thumbUrl = uploadRes.thumbnailUrl;
+      cloudinaryId = uploadRes.publicId;   // ✅ include publicId
     }
 
-    try {
-      let thumbUrl = editingVideo.thumbnail;
-      if (editingVideo.thumbnail instanceof File) {
-        const uploadRes = await api.uploadThumbnail(editingVideo.thumbnail);
-        thumbUrl = uploadRes.thumbnailUrl;
-      }
-
-      if (!editingVideo._id) {
-        const saved = await api.createVideo({ ...editingVideo, thumbnail: thumbUrl });
-        setVideos([...videos, saved.data]);
-        toast.success("Video created successfully!");
-      } else {
-        const updated = await api.updateVideo(editingVideo._id, { ...editingVideo, thumbnail: thumbUrl });
-        setVideos(videos.map(v => v._id === editingVideo._id ? updated.data : v));
-        toast.success("Video updated successfully!");
-      }
-      setEditingVideo(null);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to save video");
+    if (!editingVideo._id) {
+      const saved = await api.createVideo({ ...editingVideo, thumbnail: thumbUrl, cloudinaryId });
+      setVideos([...videos, saved.data]);
+      toast.success("Video created successfully!");
+    } else {
+      const updated = await api.updateVideo(editingVideo._id, { ...editingVideo, thumbnail: thumbUrl, cloudinaryId });
+      setVideos(videos.map(v => v._id === editingVideo._id ? updated.data : v));
+      toast.success("Video updated successfully!");
     }
-  };
+    setEditingVideo(null);
+  } catch (err: any) {
+    toast.error(err.message || "Failed to save video");
+  }
+};
+
 
   const handleDeleteVideo = async (id: string) => {
     try {
@@ -204,36 +212,40 @@ export default function DashboardNews() {
 
   // ✅ Story CRUD
   const handleSaveStory = async () => {
-    if (!editingStory) return;
+  if (!editingStory) return;
 
-    const requiredFields = ["title","excerpt","date","readTime","category","image","sdg"];
-    const missing = requiredFields.filter(f => !editingStory[f as keyof FeaturedStory]);
-    if (missing.length > 0) {
-      toast.error(`Missing fields: ${missing.join(", ")}`);
-      return;
+  const requiredFields = ["title","excerpt","date","readTime","category","image","sdg"];
+  const missing = requiredFields.filter(f => !editingStory[f as keyof FeaturedStory]);
+  if (missing.length > 0) {
+    toast.error(`Missing fields: ${missing.join(", ")}`);
+    return;
+  }
+
+  try {
+    let imageUrl = editingStory.image;
+    let cloudinaryId = editingStory.cloudinaryId;
+
+    if (editingStory.image instanceof File) {
+      const uploadRes = await api.uploadImage(editingStory.image);
+      imageUrl = uploadRes.imageUrl;
+      cloudinaryId = uploadRes.publicId;   // ✅ include publicId
     }
 
-    try {
-      let imageUrl = editingStory.image;
-      if (editingStory.image instanceof File) {
-        const uploadRes = await api.uploadImage(editingStory.image);
-        imageUrl = uploadRes.imageUrl;
-      }
-
-      if (!editingStory._id) {
-        const saved = await api.createStory({ ...editingStory, image: imageUrl });
-        setFeaturedStories([...featuredStories, saved.data]);
-        toast.success("Story created successfully!");
-      } else {
-        const updated = await api.updateStory(editingStory._id, { ...editingStory, image: imageUrl });
-        setFeaturedStories(featuredStories.map(s => s._id === editingStory._id ? updated.data : s));
-        toast.success("Story updated successfully!");
-      }
-      setEditingStory(null);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to save story");
+    if (!editingStory._id) {
+      const saved = await api.createStory({ ...editingStory, image: imageUrl, cloudinaryId });
+      setFeaturedStories([...featuredStories, saved.data]);
+      toast.success("Story created successfully!");
+    } else {
+      const updated = await api.updateStory(editingStory._id, { ...editingStory, image: imageUrl, cloudinaryId });
+      setFeaturedStories(featuredStories.map(s => s._id === editingStory._id ? updated.data : s));
+      toast.success("Story updated successfully!");
     }
-  };
+    setEditingStory(null);
+  } catch (err: any) {
+    toast.error(err.message || "Failed to save story");
+  }
+};
+
 
   const handleDeleteStory = async (id: string) => {
     try {
