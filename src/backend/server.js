@@ -49,8 +49,7 @@ const allowedOrigins = process.env.CORS_ORIGIN
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+    if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -60,7 +59,19 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
+// Apply CORS middleware
 app.use(cors(corsOptions));
+
+// ✅ Force headers to be attached even on cached/304 responses
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', allowedOrigins.includes(req.headers.origin) ? req.headers.origin : allowedOrigins[0]);
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  next();
+});
+
+// Handle preflight OPTIONS requests explicitly
+app.options('*', cors(corsOptions));;
 
 // ========================================
 // BODY PARSING MIDDLEWARE
