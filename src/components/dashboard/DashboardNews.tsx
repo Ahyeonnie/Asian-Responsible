@@ -1,7 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
+import { Button } from '../ui/button';
+import { Save, Plus, Trash2, Upload, Edit, Video, Eye, Star, Link as LinkIcon } from 'lucide-react';
 import { toast } from 'sonner';
-import { api } from '../../utils/api';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Badge } from '../ui/badge';
+import { FileUpload } from './FileUpload';
 import { ConfirmDialog } from '../ui/confirm-dialog';
+import { api } from '../../utils/api';
+
 
 // Interfaces
 interface NewsArticle {
