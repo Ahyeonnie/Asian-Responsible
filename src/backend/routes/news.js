@@ -1,18 +1,34 @@
+// routes/news.js
 const express = require('express');
 const router = express.Router();
-const mongoose = require('mongoose'); 
+const mongoose = require('mongoose');
+const multer = require('multer');
+const { GridFsStorage } = require('multer-gridfs-storage');
 const { validateObjectId } = require('../middleware/validation');
 const { Article, FeaturedVideo, FeaturedStory } = require('../models/News');
 
 // ========================================
-// GET ALL NEWS (articles + videos + stories)
+// Multer + GridFS setup
+// ========================================
+const storage = new GridFsStorage({
+  url: process.env.MONGO_URI,
+  file: (req, file) => {
+    return {
+      filename: `${Date.now()}-${file.originalname}`,
+      bucketName: 'uploads' // default GridFS bucket
+    };
+  }
+});
+const upload = multer({ storage });
+
+// ========================================
+// GET ALL NEWS
 // ========================================
 router.get('/', async (req, res) => {
   try {
     const articles = await Article.find().sort({ date: -1 });
     const videos = await FeaturedVideo.find().sort({ createdAt: -1 });
     const stories = await FeaturedStory.find().sort({ date: -1 });
-
     res.json({ articles, videos, stories });
   } catch (error) {
     console.error('Error fetching news:', error);
@@ -23,28 +39,12 @@ router.get('/', async (req, res) => {
 // ========================================
 // ARTICLE CRUD
 // ========================================
-router.get('/articles', async (req, res) => {
+router.post('/article', upload.single('image'), async (req, res) => {
   try {
-    const articles = await Article.find().sort({ date: -1 });
-    res.json({ articles });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch articles', message: error.message });
-  }
-});
-
-router.get('/article/:id', validateObjectId, async (req, res) => {
-  try {
-    const article = await Article.findById(req.params.id);
-    if (!article) return res.status(404).json({ error: 'Article not found' });
-    res.json(article);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch article', message: error.message });
-  }
-});
-
-router.post('/article', async (req, res) => {
-  try {
-    const newArticle = new Article(req.body);
+    const newArticle = new Article({
+      ...req.body,
+      imageFileId: req.file.id // reference to GridFS file
+    });
     const saved = await newArticle.save();
     res.status(201).json({ message: 'Article added successfully', data: saved });
   } catch (error) {
@@ -52,9 +52,11 @@ router.post('/article', async (req, res) => {
   }
 });
 
-router.put('/article/:id', validateObjectId, async (req, res) => {
+router.put('/article/:id', validateObjectId, upload.single('image'), async (req, res) => {
   try {
-    const updated = await Article.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const updateData = { ...req.body };
+    if (req.file) updateData.imageFileId = req.file.id;
+    const updated = await Article.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
     if (!updated) return res.status(404).json({ error: 'Article not found' });
     res.json({ message: 'Article updated successfully', data: updated });
   } catch (error) {
@@ -75,28 +77,12 @@ router.delete('/article/:id', validateObjectId, async (req, res) => {
 // ========================================
 // VIDEO CRUD
 // ========================================
-router.get('/videos', async (req, res) => {
+router.post('/video', upload.single('thumbnail'), async (req, res) => {
   try {
-    const videos = await FeaturedVideo.find().sort({ createdAt: -1 });
-    res.json({ videos });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch videos', message: error.message });
-  }
-});
-
-router.get('/video/:id', validateObjectId, async (req, res) => {
-  try {
-    const video = await FeaturedVideo.findById(req.params.id);
-    if (!video) return res.status(404).json({ error: 'Video not found' });
-    res.json(video);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch video', message: error.message });
-  }
-});
-
-router.post('/video', async (req, res) => {
-  try {
-    const newVideo = new FeaturedVideo(req.body);
+    const newVideo = new FeaturedVideo({
+      ...req.body,
+      thumbnailFileId: req.file.id
+    });
     const saved = await newVideo.save();
     res.status(201).json({ message: 'Video added successfully', data: saved });
   } catch (error) {
@@ -104,9 +90,11 @@ router.post('/video', async (req, res) => {
   }
 });
 
-router.put('/video/:id', validateObjectId, async (req, res) => {
+router.put('/video/:id', validateObjectId, upload.single('thumbnail'), async (req, res) => {
   try {
-    const updated = await FeaturedVideo.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const updateData = { ...req.body };
+    if (req.file) updateData.thumbnailFileId = req.file.id;
+    const updated = await FeaturedVideo.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
     if (!updated) return res.status(404).json({ error: 'Video not found' });
     res.json({ message: 'Video updated successfully', data: updated });
   } catch (error) {
@@ -127,28 +115,12 @@ router.delete('/video/:id', validateObjectId, async (req, res) => {
 // ========================================
 // STORY CRUD
 // ========================================
-router.get('/stories', async (req, res) => {
+router.post('/story', upload.single('image'), async (req, res) => {
   try {
-    const stories = await FeaturedStory.find().sort({ date: -1 });
-    res.json({ stories });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch stories', message: error.message });
-  }
-});
-
-router.get('/story/:id', validateObjectId, async (req, res) => {
-  try {
-    const story = await FeaturedStory.findById(req.params.id);
-    if (!story) return res.status(404).json({ error: 'Story not found' });
-    res.json(story);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch story', message: error.message });
-  }
-});
-
-router.post('/story', async (req, res) => {
-  try {
-    const newStory = new FeaturedStory(req.body);
+    const newStory = new FeaturedStory({
+      ...req.body,
+      imageFileId: req.file.id
+    });
     const saved = await newStory.save();
     res.status(201).json({ message: 'Story added successfully', data: saved });
   } catch (error) {
@@ -156,9 +128,11 @@ router.post('/story', async (req, res) => {
   }
 });
 
-router.put('/story/:id', validateObjectId, async (req, res) => {
+router.put('/story/:id', validateObjectId, upload.single('image'), async (req, res) => {
   try {
-    const updated = await FeaturedStory.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const updateData = { ...req.body };
+    if (req.file) updateData.imageFileId = req.file.id;
+    const updated = await FeaturedStory.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
     if (!updated) return res.status(404).json({ error: 'Story not found' });
     res.json({ message: 'Story updated successfully', data: updated });
   } catch (error) {
@@ -176,60 +150,4 @@ router.delete('/story/:id', validateObjectId, async (req, res) => {
   }
 });
 
-// ========================================
-// BULK UPDATE NEWS (articles + videos + stories)
-// ========================================
-router.put('/all', async (req, res) => {
-  let { articles = [], videos = [], stories = [] } = req.body;
-  const errors = {};
-
-  // ✅ Sanitize _id fields before insert
-  articles = articles.map(a => {
-    if (!mongoose.isValidObjectId(a._id)) {
-      delete a._id;
-    }
-    return a;
-  });
-  videos = videos.map(v => {
-    if (!mongoose.isValidObjectId(v._id)) {
-      delete v._id;
-    }
-    return v;
-  });
-  stories = stories.map(s => {
-    if (!mongoose.isValidObjectId(s._id)) {
-      delete s._id;
-    }
-    return s;
-  });
-
-  // Articles
-  try {
-    await Article.deleteMany({});
-    if (articles.length) await Article.insertMany(articles);
-  } catch (err) {
-    console.error('Article insert failed:', err.message);
-    errors.articles = err.message;
-  }
-
-  // Videos
-  try {
-    await FeaturedVideo.deleteMany({});
-    if (videos.length) await FeaturedVideo.insertMany(videos);
-  } catch (err) {
-    console.error('Video insert failed:', err.message);
-    errors.videos = err.message;
-  }
-
-  // Stories
-  try {
-    await FeaturedStory.deleteMany({});
-    if (stories.length) await FeaturedStory.insertMany(stories);
-  } catch (err) {
-    console.error('Story insert failed:', err.message);
-    errors.stories = err.message;
-  }
-
-  res.json({ message: 'News update attempted', errors });
-});
 module.exports = router;

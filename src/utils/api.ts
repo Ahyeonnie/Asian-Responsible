@@ -195,45 +195,41 @@ export const api = {
   // ========================================
   getNews: () => apiCall('/news'),
 
-updateAllNews: (data: any) => apiCall('/news/all', {
-  method: 'PUT',
-  body: JSON.stringify(data)
-}),
 
 // Article CRUD
-createArticle: (data: any) => apiCall('/news/article', {
+createArticle: (formData: FormData) => apiCall('/news/article', {
   method: 'POST',
-  body: JSON.stringify(data)
+  body: formData   // <-- no JSON.stringify
 }),
-updateArticle: (id: string, data: any) => apiCall(`/news/article/${id}`, {
+updateArticle: (id: string, formData: FormData) => apiCall(`/news/article/${id}`, {
   method: 'PUT',
-  body: JSON.stringify(data)
+  body: formData   // <-- no JSON.stringify
 }),
 deleteArticle: (id: string) => apiCall(`/news/article/${id}`, {
   method: 'DELETE'
 }),
 
 // Video CRUD
-createVideo: (data: any) => apiCall('/news/video', {
+createVideo: (formData: FormData) => apiCall('/news/video', {
   method: 'POST',
-  body: JSON.stringify(data)
+  body: formData
 }),
-updateVideo: (id: string, data: any) => apiCall(`/news/video/${id}`, {
+updateVideo: (id: string, formData: FormData) => apiCall(`/news/video/${id}`, {
   method: 'PUT',
-  body: JSON.stringify(data)
+  body: formData
 }),
 deleteVideo: (id: string) => apiCall(`/news/video/${id}`, {
   method: 'DELETE'
 }),
 
 // Story CRUD
-createStory: (data: any) => apiCall('/news/story', {
+createStory: (formData: FormData) => apiCall('/news/story', {
   method: 'POST',
-  body: JSON.stringify(data)
+  body: formData
 }),
-updateStory: (id: string, data: any) => apiCall(`/news/story/${id}`, {
+updateStory: (id: string, formData: FormData) => apiCall(`/news/story/${id}`, {
   method: 'PUT',
-  body: JSON.stringify(data)
+  body: formData
 }),
 deleteStory: (id: string) => apiCall(`/news/story/${id}`, {
   method: 'DELETE'

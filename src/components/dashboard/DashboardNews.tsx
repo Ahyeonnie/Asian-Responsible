@@ -11,13 +11,12 @@ import { Badge } from '../ui/badge';
 import { FileUpload } from './FileUpload';
 import { ConfirmDialog } from '../ui/confirm-dialog';
 import { api } from '../../utils/api';
-
 interface NewsArticle {
-  _id?: string; // MongoDB ObjectId
+  _id?: string;
   title: string;
-  description: string; // ✅ match backend
+  description: string;
   excerpt: string;
-  image: string;
+  image?: File | string;
   date: string;
   category: string;
   author: string;
@@ -27,20 +26,19 @@ interface NewsArticle {
 }
 
 interface NewsVideo {
-  _id?: string;        // MongoDB ObjectId
+  _id?: string;
   title: string;
   description: string;
-  thumbnail: string;   // image thumbnail
+  thumbnail?: File | string;
   duration: string;
   views: string;
   date: string;
-  videoUrl: string;    // required by backend schema
-  link?: string;       // optional external link
+  videoUrl: string;
+  link?: string;
 }
 
-
 interface FeaturedStory {
- _id?: string;
+  _id?: string;
   title: string;
   excerpt: string;
   date: string;
@@ -48,314 +46,172 @@ interface FeaturedStory {
   category: string;
   sdg: number;
   featured: boolean;
-  image: string;
+  image?: File | string;
   useCustomImage: boolean;
-  link?: string; // Optional external link
+  link?: string;
 }
-
-// ✅ Start with empty arrays instead of hardcoded defaults
-const defaultArticles: NewsArticle[] = [];
-const defaultVideos: NewsVideo[] = [];
-const defaultStories: FeaturedStory[] = [];
 
 export default function DashboardNews() {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [videos, setVideos] = useState<NewsVideo[]>([]);
-  const [featuredStories, setFeaturedStories] = useState<FeaturedStory[]>([]);
+  const [stories, setStories] = useState<FeaturedStory[]>([]);
   const [editingArticle, setEditingArticle] = useState<NewsArticle | null>(null);
   const [editingVideo, setEditingVideo] = useState<NewsVideo | null>(null);
   const [editingStory, setEditingStory] = useState<FeaturedStory | null>(null);
-  const [loading, setLoading] = useState(false);
-  
-  // Confirmation dialog states
-  const [confirmDialog, setConfirmDialog] = useState<{
-    open: boolean;
-    title: string;
-    description: string;
-    onConfirm: () => void;
-    variant?: "default" | "destructive";
-  }>({
-    open: false,
-    title: '',
-    description: '',
-    onConfirm: () => {},
-    variant: 'default'
-  });
 
-  // Load data on component mount - sync with website
   useEffect(() => {
-    loadArticles();
-    loadVideos();
-    loadFeaturedStories();
+    loadNews();
   }, []);
 
-  const loadArticles = async () => {
+  const loadNews = async () => {
     try {
       const data = await api.getNews();
-      if (data && data.articles && Array.isArray(data.articles) && data.articles.length > 0) {
-        setArticles(data.articles);
-      } else {
-        setArticles(defaultArticles);
-      }
-    } catch (error) {
-      console.error('Error loading articles:', error);
-      toast.error('Failed to load news articles. Please try again.');
-      setArticles(defaultArticles);
+      setArticles(data.articles || []);
+      setVideos(data.videos || []);
+      setStories(data.stories || []);
+    } catch {
+      toast.error('Failed to load news');
     }
   };
 
-  const loadVideos = async () => {
+  // ---------- SAVE HELPERS ----------
+  const saveArticle = async (article: NewsArticle) => {
     try {
-      const data = await api.getNews();
-      if (data && data.videos && Array.isArray(data.videos) && data.videos.length > 0) {
-        setVideos(data.videos);
-      } else {
-        setVideos(defaultVideos);
-      }
-    } catch (error) {
-      console.error('Error loading videos:', error);
-      toast.error('Failed to load videos. Please try again.');
-      setVideos(defaultVideos);
-    }
-  };
-
-  const loadFeaturedStories = async () => {
-    try {
-      const data = await api.getNews();
-      if (data && data.stories && Array.isArray(data.stories) && data.stories.length > 0) {
-        setFeaturedStories(data.stories);
-      } else {
-        setFeaturedStories(defaultStories);
-      }
-    } catch (error) {
-      console.error('Error loading featured stories:', error);
-      toast.error('Failed to load featured stories. Please try again.');
-      setFeaturedStories(defaultStories);
-    }
-  };
-
- 
- const saveArticles = async (updatedArticles: NewsArticle[]) => {
-  try {
-    const data = {
-      articles: updatedArticles,
-      videos: videos,
-      stories: featuredStories
-    };
-    await api.updateAllNews(data);   // <-- fixed
-;
-    setArticles(updatedArticles);
-  } catch (error: any) {
-    toast.error(error.message || 'Failed to save articles');
-  
-    setArticles(updatedArticles);
-  }
-};
-
-const saveVideos = async (updatedVideos: NewsVideo[]) => {
-  try {
-    const data = {
-      articles: articles,
-      videos: updatedVideos,
-      stories: featuredStories
-    };
-    await api.updateAllNews(data);   // <-- fixed
-
-
-    setVideos(updatedVideos);
-  } catch (error: any) {
-    toast.error(error.message || 'Failed to save videos');
-
-    setVideos(updatedVideos);
-  }
-};
-
-const saveFeaturedStories = async (updatedStories: FeaturedStory[]) => {
-  try {
-    const data = {
-      articles: articles,
-      videos: videos,
-      stories: updatedStories
-    };
-    await api.updateAllNews(data);   // <-- fixed
-
-
-    setFeaturedStories(updatedStories);
-  } catch (error: any) {
-    toast.error(error.message || 'Failed to save stories');
-
-    setFeaturedStories(updatedStories);
-  }
-};
-
-  // Article CRUD operations
- // ✅ Article CRUD operations
-// ✅ Article CRUD operations
-const handleSaveArticle = () => {
-  if (editingArticle) {
-    // Required fields aligned with NewsArticle interface
-    const requiredFields = [
-      { key: "title", label: "Title" },
-    
-      { key: "excerpt", label: "Excerpt" },
-      { key: "author", label: "Author" },
-      { key: "date", label: "Date" },
-      { key: "image", label: "Image" },
-      { key: "category", label: "Category" },
-    ];
-
-    const missing = requiredFields.filter(
-      f => !editingArticle[f.key as keyof NewsArticle]
-    );
-
-    if (missing.length > 0) {
-      toast.error(
-        `Please fill in required fields: ${missing.map(f => f.label).join(", ")}`
-      );
-      return;
-    }
-
-    const isNew = !editingArticle._id; // ✅ use _id instead of id
-    setConfirmDialog({
-      open: true,
-      title: isNew ? "Create Article" : "Update Article",
-      description: isNew
-        ? "Are you sure you want to create this article? It will be immediately visible on the website."
-        : "Are you sure you want to save these changes? The article will be updated on the website.",
-      onConfirm: () => {
-        if (isNew) {
-          const { _id, ...data } = editingArticle; // strip accidental _id
-          const newArticle = { ...data };
-          saveArticles([...articles, newArticle]);
-          toast.success("Article created successfully!");
-        } else {
-          saveArticles(
-            articles.map(a =>
-              a._id === editingArticle._id ? editingArticle : a
-            )
-          );
-          toast.success("Article updated successfully!");
+      const formData = new FormData();
+      Object.entries(article).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          formData.append(key, value as any);
         }
-        setEditingArticle(null);
-      },
-      variant: "default",
-    });
-  }
-};
+      });
 
-const handleDeleteArticle = async (id: string) => {
-  try {
-    await api.deleteArticle(id); // <-- call backend DELETE
-    setArticles(articles.filter(a => a._id !== id));
-    toast.success("Article deleted successfully!");
-  } catch (err) {
-    toast.error("Failed to delete article");
-  }
-};
-
-// ✅ Video CRUD operations (still use id: number)
-const handleSaveVideo = () => {
-  if (editingVideo) {
-    const requiredFields = [
-      { key: "title", label: "Title" },
-      { key: "description", label: "Description" },
-      { key: "date", label: "Date" },
-      { key: "thumbnail", label: "Thumbnail" },
-    ];
-
-     const missing = requiredFields.filter(
-      f => !editingVideo[f.key as keyof NewsVideo]
-    );
-
-    if (missing.length > 0) {
-      toast.error(
-        `Please fill in required fields: ${missing.map(f => f.label).join(", ")}`
-      );
-      return;
+      if (!article._id) {
+        await api.createArticle(formData);
+        toast.success('Article created');
+      } else {
+        await api.updateArticle(article._id, formData);
+        toast.success('Article updated');
+      }
+      loadNews();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to save article');
     }
-    const isNew = !editingVideo._id; // ✅ use _id instead of id
-    if (isNew) {
-      const { _id, ...data } = editingVideo; // strip accidental _id
-      const newVideo = { ...data };
-      saveVideos([...videos, newVideo]);
-      toast.success("Video created successfully!");
-    } else {
-      saveVideos(
-        videos.map(v =>
-          v._id === editingVideo._id ? editingVideo : v
-        )
-      );
-      toast.success("Video updated successfully!");
+  };
+
+  const saveVideo = async (video: NewsVideo) => {
+    try {
+      const formData = new FormData();
+      Object.entries(video).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          formData.append(key, value as any);
+        }
+      });
+
+      if (!video._id) {
+        await api.createVideo(formData);
+        toast.success('Video created');
+      } else {
+        await api.updateVideo(video._id, formData);
+        toast.success('Video updated');
+      }
+      loadNews();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to save video');
     }
-    setEditingVideo(null);
-  }
-};
-const handleDeleteVideo = async (id: string) => {
-  try {
-    await api.deleteVideo(id); // <-- call backend DELETE
-    setVideos(videos.filter(v => v._id !== id));
-    toast.success("Video deleted successfully!");
-  } catch (err) {
-    toast.error("Failed to delete video");
-  }
-};
+  };
 
-// ✅ Featured Story CRUD operations (still use id: number)
-const handleSaveStory = () => {
-  if (editingStory) {
-    const requiredFields = [
-      { key: "title", label: "Title" },
-      { key: "excerpt", label: "Excerpt" },
-      { key: "date", label: "Date" },
-      { key: "readTime", label: "Read Time" },
-      { key: "category", label: "Category" },
-      { key: "image", label: "Image" },
-      { key: "sdg", label: "SDG Number" },
-    ];
+  const saveStory = async (story: FeaturedStory) => {
+    try {
+      const formData = new FormData();
+      Object.entries(story).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          formData.append(key, value as any);
+        }
+      });
 
-    const missing = requiredFields.filter(
-      f => !editingStory[f.key as keyof FeaturedStory]
-    );
-
-    if (missing.length > 0) {
-      toast.error(
-        `Please fill in required fields: ${missing.map(f => f.label).join(", ")}`
-      );
-      return;
+      if (!story._id) {
+        await api.createStory(formData);
+        toast.success('Story created');
+      } else {
+        await api.updateStory(story._id, formData);
+        toast.success('Story updated');
+      }
+      loadNews();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to save story');
     }
+  };
 
-    const isNew = !editingStory._id;
-    if (isNew) {
-      const { _id, ...data } = editingStory; // strip accidental _id
-      const newStory = { ...data };
-      saveFeaturedStories([...featuredStories, newStory]);
-      toast.success("Featured story created successfully!");
-    } else {
-      saveFeaturedStories(
-        featuredStories.map(s =>
-          s._id === editingStory._id ? editingStory : s
-        )
-      );
-      toast.success("Featured story updated successfully!");
+  // ---------- DELETE HELPERS ----------
+  const deleteArticle = async (id: string) => {
+    try {
+      await api.deleteArticle(id);
+      setArticles(articles.filter(a => a._id !== id));
+      toast.success('Article deleted');
+    } catch {
+      toast.error('Failed to delete article');
     }
-    
+  };
 
-    setEditingStory(null);
-  }
-};
+  const deleteVideo = async (id: string) => {
+    try {
+      await api.deleteVideo(id);
+      setVideos(videos.filter(v => v._id !== id));
+      toast.success('Video deleted');
+    } catch {
+      toast.error('Failed to delete video');
+    }
+  };
 
+  const deleteStory = async (id: string) => {
+    try {
+      await api.deleteStory(id);
+      setStories(stories.filter(s => s._id !== id));
+      toast.success('Story deleted');
+    } catch {
+      toast.error('Failed to delete story');
+    }
+  };
 
-const handleDeleteStory = async (id: string) => {
-  try {
-    await api.deleteStory(id); // <-- call backend DELETE
-    setFeaturedStories(featuredStories.filter(s => s._id !== id));
-    toast.success("Featured story deleted successfully!");
-  } catch (err) {
-    toast.error("Failed to delete story");
-  }
-};
+  // ---------- HANDLERS ----------
+  const handleSaveArticle = () => {
+    if (editingArticle) {
+      const requiredFields = ["title", "excerpt", "author", "date", "image", "category"];
+      const missing = requiredFields.filter(f => !editingArticle[f as keyof NewsArticle]);
+      if (missing.length > 0) {
+        toast.error(`Please fill in required fields: ${missing.join(", ")}`);
+        return;
+      }
+      saveArticle(editingArticle);
+      setEditingArticle(null);
+    }
+  };
 
-  return (
+  const handleSaveVideo = () => {
+    if (editingVideo) {
+      const requiredFields = ["title", "description", "date", "thumbnail"];
+      const missing = requiredFields.filter(f => !editingVideo[f as keyof NewsVideo]);
+      if (missing.length > 0) {
+        toast.error(`Please fill in required fields: ${missing.join(", ")}`);
+        return;
+      }
+      saveVideo(editingVideo);
+      setEditingVideo(null);
+    }
+  };
+
+  const handleSaveStory = () => {
+    if (editingStory) {
+      const requiredFields = ["title", "excerpt", "date", "readTime", "category", "image", "sdg"];
+      const missing = requiredFields.filter(f => !editingStory[f as keyof FeaturedStory]);
+      if (missing.length > 0) {
+        toast.error(`Please fill in required fields: ${missing.join(", ")}`);
+        return;
+      }
+      saveStory(editingStory);
+      setEditingStory(null);
+    }
+  };
+return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
@@ -582,7 +438,7 @@ const handleDeleteStory = async (id: string) => {
                       accept="image/*"
                       maxSize={5}
                       currentFile={editingArticle.image}
-                      onUpload={(base64) => setEditingArticle({ ...editingArticle, image: base64 })}
+                   onUpload={(file) => setEditingArticle({ ...editingArticle, image: file })}
                       type="image"
                       label="Upload Article Image"
                     />
@@ -777,7 +633,8 @@ const handleDeleteStory = async (id: string) => {
                       accept="image/*"
                       maxSize={5}
                       currentFile={editingVideo.thumbnail}
-                      onUpload={(base64) => setEditingVideo({ ...editingVideo, thumbnail: base64 })}
+                  onUpload={(file) => setEditingVideo({ ...editingVideo!, thumbnail: file })}
+
                       type="image"
                       label="Upload Video Thumbnail"
                     />
@@ -972,7 +829,8 @@ const handleDeleteStory = async (id: string) => {
                       accept="image/*"
                       maxSize={5}
                       currentFile={editingStory.image}
-                      onUpload={(base64) => setEditingStory({ ...editingStory, image: base64 })}
+                   onUpload={(file) => setEditingStory({ ...editingStory!, image: file })}
+
                       type="image"
                       label="Upload Story Image"
                     />

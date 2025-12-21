@@ -1,26 +1,19 @@
 const mongoose = require('mongoose');
-
 // ========================================
 // Article Schema
 // ========================================
 const articleSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true },
   excerpt: { type: String },
-  description: { type: String, required: true }, // ✅ matches frontend
+  description: { type: String, required: true },
   author: { type: String },
-  date: { type: Date, required: true }, // better as Date for sorting/filtering
-  image: { type: String },
-  cloudinaryId: { type: String },   // <-- add this
+  date: { type: Date, required: true },
+  imageFileId: { type: mongoose.Schema.Types.ObjectId, ref: 'uploads.files' }, // GridFS reference
   category: { type: String, required: true },
   tags: [String],
   sdg: { type: Number, min: 1, max: 17 },
-  link: { type: String }   // ✅ optional external link
+  link: { type: String }
 }, { timestamps: true });
-
-articleSchema.index({ date: -1 });
-articleSchema.index({ category: 1 });
-articleSchema.index({ sdg: 1 });
-articleSchema.index({ author: 1 });
 
 // ========================================
 // Featured Video Schema
@@ -29,16 +22,11 @@ const featuredVideoSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true },
   description: { type: String, required: true },
   videoUrl: { type: String },
-  thumbnail: { type: String, required: true },
-  cloudinaryId: { type: String },   // <-- add this
+  thumbnailFileId: { type: mongoose.Schema.Types.ObjectId, ref: 'uploads.files' }, // GridFS reference
   duration: { type: String },
   category: { type: String },
-  link: { type: String }   // ✅ optional external link
+  link: { type: String }
 }, { timestamps: true });
-
-featuredVideoSchema.index({ createdAt: -1 });
-featuredVideoSchema.index({ category: 1 });
-featuredVideoSchema.index({ title: 1 });
 
 // ========================================
 // Featured Story Schema
@@ -51,10 +39,9 @@ const featuredStorySchema = new mongoose.Schema({
   category: { type: String },
   sdg: { type: Number, min: 1, max: 17 },
   featured: { type: Boolean, default: false },
-  image: { type: String },
-  cloudinaryId: { type: String },   // <-- add this
+  imageFileId: { type: mongoose.Schema.Types.ObjectId, ref: 'uploads.files' }, // GridFS reference
   useCustomImage: { type: Boolean, default: false },
-  link: { type: String }   // ✅ optional external link
+  link: { type: String }
 }, { timestamps: true });
 
 featuredStorySchema.index({ date: -1 });
