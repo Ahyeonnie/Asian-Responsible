@@ -16,6 +16,11 @@ const articleSchema = new mongoose.Schema({
   link: { type: String }   // ✅ optional external link
 }, { timestamps: true });
 
+articleSchema.index({ date: -1 });        // fast sorting by date
+articleSchema.index({ category: 1 });     // quick filtering by category
+articleSchema.index({ sdg: 1 });          // useful if filtering by SDG
+articleSchema.index({ author: 1 }); 
+
 // ========================================
 // Featured Video Schema
 // ========================================
@@ -29,6 +34,10 @@ const featuredVideoSchema = new mongoose.Schema({
   link: { type: String }   // ✅ optional external link
 }, { timestamps: true });
 
+
+featuredStorySchema.index({ date: -1 });
+featuredStorySchema.index({ category: 1 });
+featuredStorySchema.index({ sdg: 1 });
 // ========================================
 // Featured Story Schema
 // ========================================
@@ -45,6 +54,12 @@ const featuredStorySchema = new mongoose.Schema({
   link: { type: String }   // ✅ optional external link
 }, { timestamps: true });
 
+
+
+
+featuredStorySchema.index({ date: -1 });
+featuredStorySchema.index({ category: 1 });
+featuredStorySchema.index({ sdg: 1 });
 // ========================================
 // Models
 // ========================================

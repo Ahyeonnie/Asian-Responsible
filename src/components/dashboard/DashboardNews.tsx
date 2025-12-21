@@ -443,7 +443,7 @@ const handleDeleteStory = async (id: string) => {
                             variant="outline"
                             onClick={() => setEditingArticle(article)}
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className= "h-4 w-4" />
                           </Button>
                           <Button
                             size="sm"
