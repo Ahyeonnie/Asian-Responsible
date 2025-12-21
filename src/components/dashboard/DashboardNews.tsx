@@ -187,12 +187,11 @@ const saveFeaturedStories = async (updatedStories: FeaturedStory[]) => {
   // Article CRUD operations
  // ✅ Article CRUD operations
 // ✅ Article CRUD operations
-const handleSaveArticle = () => {
+const handleSaveArticle = async () => {
   if (editingArticle) {
     // Required fields aligned with NewsArticle interface
     const requiredFields = [
       { key: "title", label: "Title" },
-    
       { key: "excerpt", label: "Excerpt" },
       { key: "author", label: "Author" },
       { key: "date", label: "Date" },
@@ -211,28 +210,49 @@ const handleSaveArticle = () => {
       return;
     }
 
-    const isNew = !editingArticle._id; // ✅ use _id instead of id
+    const isNew = !editingArticle._id;
+
     setConfirmDialog({
       open: true,
       title: isNew ? "Create Article" : "Update Article",
       description: isNew
         ? "Are you sure you want to create this article? It will be immediately visible on the website."
         : "Are you sure you want to save these changes? The article will be updated on the website.",
-      onConfirm: () => {
-        if (isNew) {
-          const { _id, ...data } = editingArticle; // strip accidental _id
-          const newArticle = { ...data };
-          saveArticles([...articles, newArticle]);
-          toast.success("Article created successfully!");
-        } else {
-          saveArticles(
-            articles.map(a =>
-              a._id === editingArticle._id ? editingArticle : a
-            )
-          );
-          toast.success("Article updated successfully!");
+      onConfirm: async () => {
+        try {
+          let imageUrl = editingArticle.image;
+
+          // If the image is a File object, upload it first
+          if (editingArticle.image instanceof File) {
+            const formData = new FormData();
+            formData.append("image", editingArticle.image);
+
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/upload/image`, {
+              method: "POST",
+              body: formData,
+            });
+            const uploadRes = await res.json();
+            imageUrl = uploadRes.url;
+          }
+
+          if (isNew) {
+            const { _id, ...data } = editingArticle;
+            await api.createArticle({ ...data, image: imageUrl });
+            setArticles([...articles, { ...data, image: imageUrl }]);
+            toast.success("Article created successfully!");
+          } else {
+            await api.updateArticle(editingArticle._id!, { ...editingArticle, image: imageUrl });
+            setArticles(
+              articles.map(a =>
+                a._id === editingArticle._id ? { ...editingArticle, image: imageUrl } : a
+              )
+            );
+            toast.success("Article updated successfully!");
+          }
+          setEditingArticle(null);
+        } catch (err: any) {
+          toast.error(err.message || "Failed to save article");
         }
-        setEditingArticle(null);
       },
       variant: "default",
     });
@@ -250,7 +270,7 @@ const handleDeleteArticle = async (id: string) => {
 };
 
 // ✅ Video CRUD operations (still use id: number)
-const handleSaveVideo = () => {
+const handleSaveVideo = async () => {
   if (editingVideo) {
     const requiredFields = [
       { key: "title", label: "Title" },
@@ -259,45 +279,51 @@ const handleSaveVideo = () => {
       { key: "thumbnail", label: "Thumbnail" },
     ];
 
-     const missing = requiredFields.filter(
+    const missing = requiredFields.filter(
       f => !editingVideo[f.key as keyof NewsVideo]
     );
 
     if (missing.length > 0) {
-      toast.error(
-        `Please fill in required fields: ${missing.map(f => f.label).join(", ")}`
-      );
+      toast.error(`Please fill in required fields: ${missing.map(f => f.label).join(", ")}`);
       return;
     }
-    const isNew = !editingVideo._id; // ✅ use _id instead of id
-    if (isNew) {
-      const { _id, ...data } = editingVideo; // strip accidental _id
-      const newVideo = { ...data };
-      saveVideos([...videos, newVideo]);
-      toast.success("Video created successfully!");
-    } else {
-      saveVideos(
-        videos.map(v =>
-          v._id === editingVideo._id ? editingVideo : v
-        )
-      );
-      toast.success("Video updated successfully!");
+
+    try {
+      let thumbUrl = editingVideo.thumbnail;
+
+      // If thumbnail is a File, upload first
+      if (editingVideo.thumbnail instanceof File) {
+        const formData = new FormData();
+        formData.append("image", editingVideo.thumbnail);
+
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/upload/image`, {
+          method: "POST",
+          body: formData,
+        });
+        const uploadRes = await res.json();
+        thumbUrl = uploadRes.url;
+      }
+
+      if (!editingVideo._id) {
+        await api.createVideo({ ...editingVideo, thumbnail: thumbUrl });
+        setVideos([...videos, { ...editingVideo, thumbnail: thumbUrl }]);
+        toast.success("Video created successfully!");
+      } else {
+        await api.updateVideo(editingVideo._id, { ...editingVideo, thumbnail: thumbUrl });
+        setVideos(videos.map(v => v._id === editingVideo._id ? { ...editingVideo, thumbnail: thumbUrl } : v));
+        toast.success("Video updated successfully!");
+      }
+
+      setEditingVideo(null);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save video");
     }
-    setEditingVideo(null);
-  }
-};
-const handleDeleteVideo = async (id: string) => {
-  try {
-    await api.deleteVideo(id); // <-- call backend DELETE
-    setVideos(videos.filter(v => v._id !== id));
-    toast.success("Video deleted successfully!");
-  } catch (err) {
-    toast.error("Failed to delete video");
   }
 };
 
+
 // ✅ Featured Story CRUD operations (still use id: number)
-const handleSaveStory = () => {
+const handleSaveStory = async () => {
   if (editingStory) {
     const requiredFields = [
       { key: "title", label: "Title" },
@@ -320,25 +346,45 @@ const handleSaveStory = () => {
       return;
     }
 
-    const isNew = !editingStory._id;
-    if (isNew) {
-      const { _id, ...data } = editingStory; // strip accidental _id
-      const newStory = { ...data };
-      saveFeaturedStories([...featuredStories, newStory]);
-      toast.success("Featured story created successfully!");
-    } else {
-      saveFeaturedStories(
-        featuredStories.map(s =>
-          s._id === editingStory._id ? editingStory : s
-        )
-      );
-      toast.success("Featured story updated successfully!");
-    }
-    
+    try {
+      let imageUrl = editingStory.image;
 
-    setEditingStory(null);
+      // If the image is a File object, upload it first
+      if (editingStory.image instanceof File) {
+        const formData = new FormData();
+        formData.append("image", editingStory.image);
+
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/upload/image`, {
+          method: "POST",
+          body: formData,
+        });
+        const uploadRes = await res.json();
+        imageUrl = uploadRes.url;
+      }
+
+      const isNew = !editingStory._id;
+      if (isNew) {
+        const { _id, ...data } = editingStory;
+        await api.createStory({ ...data, image: imageUrl });
+        setFeaturedStories([...featuredStories, { ...data, image: imageUrl }]);
+        toast.success("Featured story created successfully!");
+      } else {
+        await api.updateStory(editingStory._id!, { ...editingStory, image: imageUrl });
+        setFeaturedStories(
+          featuredStories.map(s =>
+            s._id === editingStory._id ? { ...editingStory, image: imageUrl } : s
+          )
+        );
+        toast.success("Featured story updated successfully!");
+      }
+
+      setEditingStory(null);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save story");
+    }
   }
 };
+
 
 
 const handleDeleteStory = async (id: string) => {
