@@ -3,6 +3,22 @@ const router = express.Router();
 const mongoose = require('mongoose'); 
 const { validateObjectId } = require('../middleware/validation');
 const { Article, FeaturedVideo, FeaturedStory } = require('../models/News');
+const cloudinary = require('cloudinary').v2;
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// Helper: upload to Cloudinary if not already a URL
+async function ensureCloudinaryUrl(fileOrUrl, folder) {
+  if (!fileOrUrl) return null;
+  if (fileOrUrl.startsWith('http')) return fileOrUrl; // already a URL
+  const result = await cloudinary.uploader.upload(fileOrUrl, { folder });
+  return result.secure_url;
+}
 
 // ========================================
 // GET ALL NEWS (articles + videos + stories)
@@ -44,7 +60,9 @@ router.get('/article/:id', validateObjectId, async (req, res) => {
 
 router.post('/article', async (req, res) => {
   try {
-    const newArticle = new Article(req.body);
+    const { image, ...rest } = req.body;
+    const imageUrl = await ensureCloudinaryUrl(image, 'sdg-articles');
+    const newArticle = new Article({ ...rest, image: imageUrl });
     const saved = await newArticle.save();
     res.status(201).json({ message: 'Article added successfully', data: saved });
   } catch (error) {
@@ -54,7 +72,13 @@ router.post('/article', async (req, res) => {
 
 router.put('/article/:id', validateObjectId, async (req, res) => {
   try {
-    const updated = await Article.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const { image, ...rest } = req.body;
+    const imageUrl = await ensureCloudinaryUrl(image, 'sdg-articles');
+    const updated = await Article.findByIdAndUpdate(
+      req.params.id,
+      { ...rest, image: imageUrl },
+      { new: true, runValidators: true }
+    );
     if (!updated) return res.status(404).json({ error: 'Article not found' });
     res.json({ message: 'Article updated successfully', data: updated });
   } catch (error) {
@@ -96,7 +120,9 @@ router.get('/video/:id', validateObjectId, async (req, res) => {
 
 router.post('/video', async (req, res) => {
   try {
-    const newVideo = new FeaturedVideo(req.body);
+    const { thumbnail, ...rest } = req.body;
+    const thumbUrl = await ensureCloudinaryUrl(thumbnail, 'sdg-videos');
+    const newVideo = new FeaturedVideo({ ...rest, thumbnail: thumbUrl });
     const saved = await newVideo.save();
     res.status(201).json({ message: 'Video added successfully', data: saved });
   } catch (error) {
@@ -106,7 +132,13 @@ router.post('/video', async (req, res) => {
 
 router.put('/video/:id', validateObjectId, async (req, res) => {
   try {
-    const updated = await FeaturedVideo.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const { thumbnail, ...rest } = req.body;
+    const thumbUrl = await ensureCloudinaryUrl(thumbnail, 'sdg-videos');
+    const updated = await FeaturedVideo.findByIdAndUpdate(
+      req.params.id,
+      { ...rest, thumbnail: thumbUrl },
+      { new: true, runValidators: true }
+    );
     if (!updated) return res.status(404).json({ error: 'Video not found' });
     res.json({ message: 'Video updated successfully', data: updated });
   } catch (error) {
@@ -148,7 +180,9 @@ router.get('/story/:id', validateObjectId, async (req, res) => {
 
 router.post('/story', async (req, res) => {
   try {
-    const newStory = new FeaturedStory(req.body);
+    const { image, ...rest } = req.body;
+    const imageUrl = await ensureCloudinaryUrl(image, 'sdg-stories');
+    const newStory = new FeaturedStory({ ...rest, image: imageUrl });
     const saved = await newStory.save();
     res.status(201).json({ message: 'Story added successfully', data: saved });
   } catch (error) {
@@ -158,7 +192,13 @@ router.post('/story', async (req, res) => {
 
 router.put('/story/:id', validateObjectId, async (req, res) => {
   try {
-    const updated = await FeaturedStory.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const { image, ...rest } = req.body;
+    const imageUrl = await ensureCloudinaryUrl(image, 'sdg-stories');
+    const updated = await FeaturedStory.findByIdAndUpdate(
+      req.params.id,
+      { ...rest, image: imageUrl },
+      { new: true, runValidators: true }
+    );
     if (!updated) return res.status(404).json({ error: 'Story not found' });
     res.json({ message: 'Story updated successfully', data: updated });
   } catch (error) {
@@ -185,28 +225,29 @@ router.put('/all', async (req, res) => {
 
   // ✅ Sanitize _id fields before insert
   articles = articles.map(a => {
-    if (!mongoose.isValidObjectId(a._id)) {
-      delete a._id;
-    }
+    if (!mongoose.isValidObjectId(a._id)) delete a._id;
     return a;
   });
   videos = videos.map(v => {
-    if (!mongoose.isValidObjectId(v._id)) {
-      delete v._id;
-    }
+    if (!mongoose.isValidObjectId(v._id)) delete v._id;
     return v;
   });
   stories = stories.map(s => {
-    if (!mongoose.isValidObjectId(s._id)) {
-      delete s._id;
-    }
+    if (!mongoose.isValidObjectId(s._id)) delete s._id;
     return s;
   });
 
   // Articles
   try {
     await Article.deleteMany({});
-    if (articles.length) await Article.insertMany(articles);
+    if (articles.length) {
+      const processed = [];
+      for (const a of articles) {
+        const imageUrl = await ensureCloudinaryUrl(a.image, 'sdg-articles');
+        processed.push({ ...a, image: imageUrl });
+      }
+      await Article.insertMany(processed);
+    }
   } catch (err) {
     console.error('Article insert failed:', err.message);
     errors.articles = err.message;
@@ -215,7 +256,14 @@ router.put('/all', async (req, res) => {
   // Videos
   try {
     await FeaturedVideo.deleteMany({});
-    if (videos.length) await FeaturedVideo.insertMany(videos);
+    if (videos.length) {
+      const processed = [];
+      for (const v of videos) {
+        const thumbUrl = await ensureCloudinaryUrl(v.thumbnail, 'sdg-videos');
+        processed.push({ ...v, thumbnail: thumbUrl });
+      }
+      await FeaturedVideo.insertMany(processed);
+    }
   } catch (err) {
     console.error('Video insert failed:', err.message);
     errors.videos = err.message;
@@ -224,7 +272,14 @@ router.put('/all', async (req, res) => {
   // Stories
   try {
     await FeaturedStory.deleteMany({});
-    if (stories.length) await FeaturedStory.insertMany(stories);
+    if (stories.length) {
+      const processed = [];
+      for (const s of stories) {
+        const imageUrl = await ensureCloudinaryUrl(s.image, 'sdg-stories');
+        processed.push({ ...s, image: imageUrl });
+      }
+      await FeaturedStory.insertMany(processed);
+    }
   } catch (err) {
     console.error('Story insert failed:', err.message);
     errors.stories = err.message;
@@ -232,4 +287,5 @@ router.put('/all', async (req, res) => {
 
   res.json({ message: 'News update attempted', errors });
 });
+
 module.exports = router;
