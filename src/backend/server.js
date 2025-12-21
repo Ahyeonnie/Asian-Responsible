@@ -40,17 +40,16 @@ if (process.env.ENABLE_REQUEST_LOGGING !== 'false') {
 }
 
 // ========================================
-// CORS CONFIGURATION// Read allowed origins from env
-const allowedOrigins = process.env.CORS_ORIGIN
+// CORS CONFIGURATION
+// ========================================
+const allowedOrigins = process.env.CORS_ORIGIN 
   ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
   : ['http://localhost:3000', 'http://localhost:5173'];
 
-console.log('Allowed origins:', allowedOrigins);
-
 const corsOptions = {
   origin: function (origin, callback) {
-    // allow requests with no origin (like mobile apps or curl)
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -60,11 +59,19 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
-// Apply CORS globally
+// Apply CORS middleware
 app.use(cors(corsOptions));
 
-// Handle preflight requests
-app.options('*', cors(corsOptions));
+// ✅ Force headers to be attached even on cached/304 responses
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', allowedOrigins.includes(req.headers.origin) ? req.headers.origin : allowedOrigins[0]);
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  next();
+});
+
+// Handle preflight OPTIONS requests explicitly
+app.options('*', cors(corsOptions));;
 
 // ========================================
 // BODY PARSING MIDDLEWARE
@@ -92,6 +99,99 @@ const upload = multer({
   storage: storage,
   limits: {
     fileSize: 500 * 1024 * 1024 // 500MB max file size
+  }
+});
+
+// Video upload endpoint
+app.post('/api/upload/video', upload.single('video'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No video file provided' });
+    }
+
+    const result = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          resource_type: 'video',
+          folder: 'sdg-videos',
+          chunk_size: 6000000
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      uploadStream.end(req.file.buffer);
+    });
+
+    res.json({
+      message: 'Video uploaded successfully',
+      url: result.secure_url,
+      publicId: result.public_id,
+      duration: result.duration,
+      format: result.format
+    });
+  } catch (error) {
+    console.error('Error uploading video:', error);
+    res.status(500).json({ error: 'Failed to upload video', message: error.message });
+  }
+});
+
+// Image upload endpoint
+app.post('/api/upload/image', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file provided' });
+    }
+
+    const result = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          resource_type: 'image',
+          folder: 'sdg-images',
+          transformation: [
+            { width: 1920, height: 1080, crop: 'limit' },
+            { quality: 'auto' }
+          ]
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      uploadStream.end(req.file.buffer);
+    });
+
+    res.json({
+      message: 'Image uploaded successfully',
+      url: result.secure_url,
+      publicId: result.public_id,
+      width: result.width,
+      height: result.height
+    });
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    res.status(500).json({ error: 'Failed to upload image', message: error.message });
+  }
+});
+
+// Delete file from Cloudinary
+app.delete('/api/upload/:publicId', async (req, res) => {
+  try {
+    const { publicId } = req.params;
+    const { resourceType } = req.query;
+    
+    const result = await cloudinary.uploader.destroy(publicId, {
+      resource_type: resourceType || 'image'
+    });
+    
+    res.json({
+      message: 'File deleted successfully',
+      result
+    });
+  } catch (error) {
+    console.error('Error deleting file:', error);
+    res.status(500).json({ error: 'Failed to delete file', message: error.message });
   }
 });
 
