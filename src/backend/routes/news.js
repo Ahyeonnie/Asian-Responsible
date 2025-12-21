@@ -104,7 +104,10 @@ router.get('/article', async (req, res) => {
 
 router.post('/article', async (req, res) => {
   try {
-    const newArticle = new Article(req.body); // req.body.image should already be a Cloudinary URL
+    const newArticle = new Article({
+      ...req.body,
+      cloudinaryId: req.body.cloudinaryId || null
+    });
     const saved = await newArticle.save();
     res.status(201).json({ message: 'Article added successfully', data: saved });
   } catch (error) {
@@ -114,7 +117,11 @@ router.post('/article', async (req, res) => {
 
 router.put('/article/:id', validateObjectId, async (req, res) => {
   try {
-    const updated = await Article.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const updated = await Article.findByIdAndUpdate(
+      req.params.id,
+      { ...req.body, cloudinaryId: req.body.cloudinaryId || null },
+      { new: true, runValidators: true }
+    );
     if (!updated) return res.status(404).json({ error: 'Article not found' });
     res.json({ message: 'Article updated successfully', data: updated });
   } catch (error) {
@@ -148,7 +155,10 @@ router.get('/video', async (req, res) => {
 
 router.post('/video', async (req, res) => {
   try {
-    const newVideo = new FeaturedVideo(req.body); // req.body.thumbnail should already be a Cloudinary URL
+    const newVideo = new FeaturedVideo({
+      ...req.body,
+      cloudinaryId: req.body.cloudinaryId || null
+    });
     const saved = await newVideo.save();
     res.status(201).json({ message: 'Video added successfully', data: saved });
   } catch (error) {
@@ -158,7 +168,11 @@ router.post('/video', async (req, res) => {
 
 router.put('/video/:id', validateObjectId, async (req, res) => {
   try {
-    const updated = await FeaturedVideo.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const updated = await FeaturedVideo.findByIdAndUpdate(
+      req.params.id,
+      { ...req.body, cloudinaryId: req.body.cloudinaryId || null },
+      { new: true, runValidators: true }
+    );
     if (!updated) return res.status(404).json({ error: 'Video not found' });
     res.json({ message: 'Video updated successfully', data: updated });
   } catch (error) {
@@ -192,7 +206,10 @@ router.get('/story', async (req, res) => {
 
 router.post('/story', async (req, res) => {
   try {
-    const newStory = new FeaturedStory(req.body); // req.body.image should already be a Cloudinary URL
+    const newStory = new FeaturedStory({
+      ...req.body,
+      cloudinaryId: req.body.cloudinaryId || null
+    });
     const saved = await newStory.save();
     res.status(201).json({ message: 'Story added successfully', data: saved });
   } catch (error) {
@@ -202,7 +219,11 @@ router.post('/story', async (req, res) => {
 
 router.put('/story/:id', validateObjectId, async (req, res) => {
   try {
-    const updated = await FeaturedStory.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const updated = await FeaturedStory.findByIdAndUpdate(
+      req.params.id,
+      { ...req.body, cloudinaryId: req.body.cloudinaryId || null },
+      { new: true, runValidators: true }
+    );
     if (!updated) return res.status(404).json({ error: 'Story not found' });
     res.json({ message: 'Story updated successfully', data: updated });
   } catch (error) {
@@ -214,7 +235,9 @@ router.delete('/story/:id', validateObjectId, async (req, res) => {
   try {
     const story = await FeaturedStory.findById(req.params.id);
     if (!story) return res.status(404).json({ error: 'Story not found' });
-    if (story.cloudinaryId) await cloudinary.uploader.destroy(story.cloudinaryId);
+    if (story.cloudinaryId) {
+      await cloudinary.uploader.destroy(story.cloudinaryId);
+    }
     await story.deleteOne();
     res.json({ message: 'Story deleted successfully', data: story });
   } catch (error) {
