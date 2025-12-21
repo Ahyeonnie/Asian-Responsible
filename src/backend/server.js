@@ -40,14 +40,16 @@ if (process.env.ENABLE_REQUEST_LOGGING !== 'false') {
 }
 
 // ========================================
-// CORS CONFIGURATION
-// ========================================
+// CORS CONFIGURATION// Read allowed origins from env
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
   : ['http://localhost:3000', 'http://localhost:5173'];
 
+console.log('Allowed origins:', allowedOrigins);
+
 const corsOptions = {
   origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -58,21 +60,11 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
+// Apply CORS globally
 app.use(cors(corsOptions));
 
-// Force headers on all responses (including 304)
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (origin && allowedOrigins.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-  }
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  next();
-});
-
+// Handle preflight requests
 app.options('*', cors(corsOptions));
-
 
 // ========================================
 // BODY PARSING MIDDLEWARE
