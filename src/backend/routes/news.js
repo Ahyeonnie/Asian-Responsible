@@ -25,21 +25,27 @@ cloudinary.config({
 // ========================================
 
 // Upload image
+const storage = multer.memoryStorage();
+const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } });
+
 router.post("/upload-image", upload.single("image"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: "No image file uploaded" });
 
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      resource_type: "image",
-      folder: "sdg-images"
+    const result = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { resource_type: "image", folder: "sdg-images" },
+        (error, result) => error ? reject(error) : resolve(result)
+      );
+      stream.end(req.file.buffer);
     });
-    fs.unlinkSync(req.file.path);
 
     res.json({ imageUrl: result.secure_url, publicId: result.public_id });
   } catch (error) {
-    res.status(500).json({ error: "Image upload failed", message: error.message });
+    res.status(500).json({ error: "Image upload failed" });
   }
 });
+
 
 // Upload video thumbnail
 router.post("/upload-thumbnail", upload.single("thumbnail"), async (req, res) => {
