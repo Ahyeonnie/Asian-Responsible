@@ -42,14 +42,13 @@ if (process.env.ENABLE_REQUEST_LOGGING !== 'false') {
 // ========================================
 // CORS CONFIGURATION
 // ========================================
-const allowedOrigins = process.env.CORS_ORIGIN 
+const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
   : ['http://localhost:3000', 'http://localhost:5173'];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -59,14 +58,12 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
-// Apply CORS middleware
 app.use(cors(corsOptions));
 
-// ✅ Force headers to be attached even on cached/304 responses
-// Force CORS headers on all responses, including 304
+// Force headers on all responses (including 304)
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
+  if (origin && allowedOrigins.includes(origin)) {
     res.header('Access-Control-Allow-Origin', origin);
   }
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
@@ -74,9 +71,8 @@ app.use((req, res, next) => {
   next();
 });
 
-
-// Handle preflight OPTIONS requests explicitly
 app.options('*', cors(corsOptions));
+
 
 // ========================================
 // BODY PARSING MIDDLEWARE
