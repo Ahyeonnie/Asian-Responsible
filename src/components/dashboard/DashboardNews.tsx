@@ -53,6 +53,9 @@ interface FeaturedStory {
   link?: string; // Optional external link
 }
 
+function normalizeDate(date: string | Date): string {
+  return new Date(date).toISOString().split("T")[0];
+}
 // ✅ Start with empty arrays instead of hardcoded defaults
 const defaultArticles: NewsArticle[] = [];
 const defaultVideos: NewsVideo[] = [];
@@ -135,53 +138,6 @@ export default function DashboardNews() {
   };
 
  
- const saveArticles = async (updatedArticles: NewsArticle[]) => {
-  try {
-    for (const article of updatedArticles) {
-      if (!article._id) {
-        await api.createArticle(article);   // POST /news/article
-      } else {
-        await api.updateArticle(article._id, article); // PUT /news/article/:id
-      }
-    }
-    setArticles(updatedArticles);
-    toast.success("Articles saved successfully!");
-  } catch (error: any) {
-    toast.error(error.message || "Failed to save articles");
-  }
-};
-
-const saveVideos = async (updatedVideos: NewsVideo[]) => {
-  try {
-    for (const video of updatedVideos) {
-      if (!video._id) {
-        await api.createVideo(video);   // POST /news/video
-      } else {
-        await api.updateVideo(video._id, video); // PUT /news/video/:id
-      }
-    }
-    setVideos(updatedVideos);
-    toast.success("Videos saved successfully!");
-  } catch (error: any) {
-    toast.error(error.message || "Failed to save videos");
-  }
-};
-
-const saveFeaturedStories = async (updatedStories: FeaturedStory[]) => {
-  try {
-    for (const story of updatedStories) {
-      if (!story._id) {
-        await api.createStory(story);   // POST /news/story
-      } else {
-        await api.updateStory(story._id, story); // PUT /news/story/:id
-      }
-    }
-    setFeaturedStories(updatedStories);
-    toast.success("Stories saved successfully!");
-  } catch (error: any) {
-    toast.error(error.message || "Failed to save stories");
-  }
-};
 
 
   // Article CRUD operations
