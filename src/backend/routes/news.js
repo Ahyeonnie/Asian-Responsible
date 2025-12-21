@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const mongoose = require('mongoose'); 
 const { validateObjectId } = require('../middleware/validation');
 const { Article, FeaturedVideo, FeaturedStory } = require('../models/News');
 const cloudinary = require('cloudinary').v2;
@@ -39,11 +38,25 @@ router.get('/', async (req, res) => {
 // ========================================
 // ARTICLE CRUD
 // ========================================
+router.get('/article', async (req, res) => {
+  try {
+    const articles = await Article.find().sort({ date: -1 });
+    res.json(articles);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch articles', message: error.message });
+  }
+});
+
 router.post('/article', async (req, res) => {
   try {
     const { image, ...rest } = req.body;
-    const { url, publicId } = await ensureCloudinaryUrl(image, 'sdg-articles');
-    const newArticle = new Article({ ...rest, image: url, cloudinaryId: publicId });
+    let updateData = { ...rest };
+    if (image) {
+      const { url, publicId } = await ensureCloudinaryUrl(image, 'sdg-articles');
+      updateData.image = url;
+      updateData.cloudinaryId = publicId;
+    }
+    const newArticle = new Article(updateData);
     const saved = await newArticle.save();
     res.status(201).json({ message: 'Article added successfully', data: saved });
   } catch (error) {
@@ -54,12 +67,13 @@ router.post('/article', async (req, res) => {
 router.put('/article/:id', validateObjectId, async (req, res) => {
   try {
     const { image, ...rest } = req.body;
-    const { url, publicId } = await ensureCloudinaryUrl(image, 'sdg-articles');
-    const updated = await Article.findByIdAndUpdate(
-      req.params.id,
-      { ...rest, image: url, cloudinaryId: publicId },
-      { new: true, runValidators: true }
-    );
+    let updateData = { ...rest };
+    if (image) {
+      const { url, publicId } = await ensureCloudinaryUrl(image, 'sdg-articles');
+      updateData.image = url;
+      updateData.cloudinaryId = publicId;
+    }
+    const updated = await Article.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
     if (!updated) return res.status(404).json({ error: 'Article not found' });
     res.json({ message: 'Article updated successfully', data: updated });
   } catch (error) {
@@ -71,11 +85,7 @@ router.delete('/article/:id', validateObjectId, async (req, res) => {
   try {
     const article = await Article.findById(req.params.id);
     if (!article) return res.status(404).json({ error: 'Article not found' });
-
-    if (article.cloudinaryId) {
-      await cloudinary.uploader.destroy(article.cloudinaryId);
-    }
-
+    if (article.cloudinaryId) await cloudinary.uploader.destroy(article.cloudinaryId);
     await article.deleteOne();
     res.json({ message: 'Article deleted successfully', data: article });
   } catch (error) {
@@ -86,11 +96,25 @@ router.delete('/article/:id', validateObjectId, async (req, res) => {
 // ========================================
 // VIDEO CRUD
 // ========================================
+router.get('/video', async (req, res) => {
+  try {
+    const videos = await FeaturedVideo.find().sort({ createdAt: -1 });
+    res.json(videos);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch videos', message: error.message });
+  }
+});
+
 router.post('/video', async (req, res) => {
   try {
     const { thumbnail, ...rest } = req.body;
-    const { url, publicId } = await ensureCloudinaryUrl(thumbnail, 'sdg-videos');
-    const newVideo = new FeaturedVideo({ ...rest, thumbnail: url, cloudinaryId: publicId });
+    let updateData = { ...rest };
+    if (thumbnail) {
+      const { url, publicId } = await ensureCloudinaryUrl(thumbnail, 'sdg-videos');
+      updateData.thumbnail = url;
+      updateData.cloudinaryId = publicId;
+    }
+    const newVideo = new FeaturedVideo(updateData);
     const saved = await newVideo.save();
     res.status(201).json({ message: 'Video added successfully', data: saved });
   } catch (error) {
@@ -101,12 +125,13 @@ router.post('/video', async (req, res) => {
 router.put('/video/:id', validateObjectId, async (req, res) => {
   try {
     const { thumbnail, ...rest } = req.body;
-    const { url, publicId } = await ensureCloudinaryUrl(thumbnail, 'sdg-videos');
-    const updated = await FeaturedVideo.findByIdAndUpdate(
-      req.params.id,
-      { ...rest, thumbnail: url, cloudinaryId: publicId },
-      { new: true, runValidators: true }
-    );
+    let updateData = { ...rest };
+    if (thumbnail) {
+      const { url, publicId } = await ensureCloudinaryUrl(thumbnail, 'sdg-videos');
+      updateData.thumbnail = url;
+      updateData.cloudinaryId = publicId;
+    }
+    const updated = await FeaturedVideo.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
     if (!updated) return res.status(404).json({ error: 'Video not found' });
     res.json({ message: 'Video updated successfully', data: updated });
   } catch (error) {
@@ -118,11 +143,7 @@ router.delete('/video/:id', validateObjectId, async (req, res) => {
   try {
     const video = await FeaturedVideo.findById(req.params.id);
     if (!video) return res.status(404).json({ error: 'Video not found' });
-
-    if (video.cloudinaryId) {
-      await cloudinary.uploader.destroy(video.cloudinaryId);
-    }
-
+    if (video.cloudinaryId) await cloudinary.uploader.destroy(video.cloudinaryId);
     await video.deleteOne();
     res.json({ message: 'Video deleted successfully', data: video });
   } catch (error) {
@@ -133,11 +154,25 @@ router.delete('/video/:id', validateObjectId, async (req, res) => {
 // ========================================
 // STORY CRUD
 // ========================================
+router.get('/story', async (req, res) => {
+  try {
+    const stories = await FeaturedStory.find().sort({ date: -1 });
+    res.json(stories);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch stories', message: error.message });
+  }
+});
+
 router.post('/story', async (req, res) => {
   try {
     const { image, ...rest } = req.body;
-    const { url, publicId } = await ensureCloudinaryUrl(image, 'sdg-stories');
-    const newStory = new FeaturedStory({ ...rest, image: url, cloudinaryId: publicId });
+    let updateData = { ...rest };
+    if (image) {
+      const { url, publicId } = await ensureCloudinaryUrl(image, 'sdg-stories');
+      updateData.image = url;
+      updateData.cloudinaryId = publicId;
+    }
+    const newStory = new FeaturedStory(updateData);
     const saved = await newStory.save();
     res.status(201).json({ message: 'Story added successfully', data: saved });
   } catch (error) {
@@ -148,19 +183,19 @@ router.post('/story', async (req, res) => {
 router.put('/story/:id', validateObjectId, async (req, res) => {
   try {
     const { image, ...rest } = req.body;
-    const { url, publicId } = await ensureCloudinaryUrl(image, 'sdg-stories');
-    const updated = await FeaturedStory.findByIdAndUpdate(
-      req.params.id,
-      { ...rest, image: url, cloudinaryId: publicId },
-      { new: true, runValidators: true }
-    );
+    let updateData = { ...rest };
+    if (image) {
+      const { url, publicId } = await ensureCloudinaryUrl(image, 'sdg-stories');
+      updateData.image = url;
+      updateData.cloudinaryId = publicId;
+    }
+    const updated = await FeaturedStory.findByIdAndUpdate(req.params.id, updateData, { new: true, runValidators: true });
     if (!updated) return res.status(404).json({ error: 'Story not found' });
     res.json({ message: 'Story updated successfully', data: updated });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update story', message: error.message });
   }
 });
-
 router.delete('/story/:id', validateObjectId, async (req, res) => {
   try {
     const story = await FeaturedStory.findById(req.params.id);
@@ -177,4 +212,7 @@ router.delete('/story/:id', validateObjectId, async (req, res) => {
   }
 });
 
+// ========================================
+// EXPORT ROUTER
+// ========================================
 module.exports = router;
