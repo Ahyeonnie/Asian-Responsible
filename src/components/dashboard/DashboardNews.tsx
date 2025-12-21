@@ -481,43 +481,14 @@ export default function DashboardNews() {
 
            <div className="space-y-2">
   <Label>Featured Image *</Label>
-  <div className="flex gap-2 items-center mb-2">
-    <Button
-      type="button"
-      size="sm"
-      variant={typeof editingArticle.image === "string" ? "default" : "outline"}
-      onClick={() => {
-        if (editingArticle.image instanceof File) {
-          setEditingArticle({ ...editingArticle, image: '' });
-        }
-      }}
-    >
-      <LinkIcon className="h-4 w-4 mr-2" />
-      {typeof editingArticle.image === "string" ? 'Using URL' : 'Use URL Instead'}
-    </Button>
-  </div>
-
-  {typeof editingArticle.image === "string" ? (
-    <div className="space-y-2">
-      <Input
-        value={editingArticle.image}
-        onChange={(e) => setEditingArticle({ ...editingArticle, image: e.target.value })}
-        placeholder="https://images.unsplash.com/..."
-      />
-      {editingArticle.image && (
-        <img src={editingArticle.image} alt="Preview" className="w-full h-48 object-cover rounded" />
-      )}
-    </div>
-  ) : (
-    <FileUpload
-      accept="image/*"
-      maxSize={5}
-      currentFile={editingArticle.image}
-      onUpload={(file) => setEditingArticle({ ...editingArticle, image: file })}
-      type="image"
-      label="Upload Article Image"
-    />
-  )}
+  <FileUpload
+    accept="image/*"
+    maxSize={5}
+    currentFile={editingArticle.image}
+    onUpload={(file) => setEditingArticle({ ...editingArticle, image: file })}
+    type="image"
+    label="Upload Article Image"
+  />
 
   {editingArticle.image instanceof File && (
     <img
